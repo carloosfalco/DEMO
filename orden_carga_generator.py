@@ -17,6 +17,7 @@ if uploaded_file:
         df = df[['Fecha', 'Tipo', 'Nombre', 'Albarán', 'Domicilio', 'Población', 'Provincia', 'Palets']]
         df = df.sort_values(by=['Fecha', 'Tipo'], ascending=[True, True])
 
+        # Construir mensaje
         instrucciones = "🚛 *INSTRUCCIONES DE RUTA*\n\n"
         instrucciones += "📝 Nº de pedido: ________\n\n"
 
@@ -30,7 +31,11 @@ if uploaded_file:
                 f"📦 Albarán: {row['Albarán']} | Palets: {int(row['Palets'])}\n\n"
             )
 
-        st.text_area("Mensaje único para enviar por WhatsApp", value=instrucciones.strip(), height=600)
+        mensaje_final = instrucciones.strip()
+
+        # Mostrar y copiar
+        st.code(mensaje_final, language=None)
+        st.download_button("📋 Copiar mensaje (descargar .txt)", mensaje_final, file_name="instrucciones_ruta.txt")
 
     except Exception as e:
         st.error(f"❌ Error al procesar el archivo: {e}")
