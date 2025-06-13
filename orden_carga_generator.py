@@ -2,27 +2,29 @@ import streamlit as st
 import pandas as pd
 
 st.set_page_config(page_title="Resumen de Cargas y Descargas", page_icon="📲", layout="wide")
-
 st.title("📲 Instrucciones de Ruta para el Conductor")
 
 uploaded_file = st.file_uploader("📁 Sube el archivo Excel de Trans2000", type=["xlsx"])
 
 if uploaded_file:
     try:
-        df = pd.read_excel(uploaded_file, sheet_name=0)  # Usa el primer sheet directamente
+        df = pd.read_excel(uploaded_file, sheet_name=0)
+        st.subheader("Vista previa del archivo cargado:")
+        st.dataframe(df.head())  # <-- Aquí ves si todo está bien
 
-        # Asegura que las columnas existen
+        # Revisa las columnas presentes
         columnas_necesarias = ['Fecha', 'Tipo', 'Nombre', 'Albarán', 'Domicilio', 'Población', 'Provincia', 'Palets']
-        if not all(col in df.columns for col in columnas_necesarias):
-            st.error("❌ El archivo no contiene las columnas necesarias.")
-        else:
-            df = df[columnas_necesarias]
-            df = df.sort_values(by=['Fecha', 'Tipo']).reset_index(drop=True)
+        columnas_presentes = [col for col in columnas_necesarias if col in df.columns]
 
-            # Campo para número de pedido
+        if len(columnas_presentes) < len(columnas_necesarias):
+            st.warning(f"Faltan columnas: {set(columnas_necesarias) - set(columnas_presentes)}")
+        else:
+            df = df[columnas_necesarias].sort_values(by=['Fecha', 'Tipo']).reset_index(drop=True)
+
+            # ✅ Entrada manual de pedido
             pedido = st.text_input("📝 Introduce el número de pedido:", placeholder="Ej: 4587")
 
-            # Campos para horas individuales
+            # ✅ Entradas de hora por parada
             horas = []
             st.markdown("### ⏰ Introduce la hora de cada parada:")
             for i, row in df.iterrows():
@@ -30,7 +32,7 @@ if uploaded_file:
                 hora = st.text_input(etiqueta, key=f"hora_{i}", placeholder="Ej: 08:30")
                 horas.append(hora)
 
-            # Construcción del mensaje final
+            # ✅ Generación del mensaje
             instrucciones = "🚛 *INSTRUCCIONES DE RUTA*\n\n"
             instrucciones += f"📝 Nº de pedido: {pedido if pedido else '________'}\n\n"
 
