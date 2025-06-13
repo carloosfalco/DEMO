@@ -19,9 +19,9 @@ if uploaded_file:
 
         instrucciones = "🚛 *INSTRUCCIONES DE RUTA*\n\n"
         for _, row in df.iterrows():
-            tipo = "🟢 *Carga*" if row['Tipo'].lower() == 'carga' else "🔴 *Descarga*"
+            tipo = "*CARGA*" if row['Tipo'].lower() == 'carga' else "*DESCARGA*"
             instrucciones += (
-                f"{tipo} - {row['Fecha'].strftime('%d/%m/%Y')}\n"
+                f"🔹 {tipo} - {row['Fecha'].strftime('%d/%m/%Y')}\n"
                 f"📍 {row['Nombre']}\n"
                 f"🏠 {row['Domicilio']}, {row['Población']} ({row['Provincia']})\n"
                 f"📦 Albarán: {row['Albarán']} | Palets: {int(row['Palets'])}\n\n"
