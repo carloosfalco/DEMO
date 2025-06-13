@@ -4,7 +4,7 @@ import pandas as pd
 st.set_page_config(page_title="Resumen de Cargas y Descargas", page_icon="📲", layout="wide")
 
 st.title("📲 Instrucciones de Ruta para el Conductor")
-st.markdown("Sube el archivo de Trans2000. El mensaje incluirá espacios para rellenar a mano horas y nº de pedido.")
+st.markdown("Sube el archivo de Trans2000. El mensaje incluirá espacios para rellenar manualmente horas y nº de pedido.")
 
 # Subida del archivo
 uploaded_file = st.file_uploader("📁 Sube el archivo Excel de Trans2000", type=["xlsx"])
@@ -13,7 +13,7 @@ if uploaded_file:
     try:
         df = pd.read_excel(uploaded_file, sheet_name="Hoja1")
 
-        # Filtrar y ordenar
+        # Filtrar columnas clave y ordenar
         df = df[['Fecha', 'Tipo', 'Nombre', 'Albarán', 'Domicilio', 'Población', 'Provincia', 'Palets']]
         df = df.sort_values(by=['Fecha', 'Tipo'], ascending=[True, True])
 
