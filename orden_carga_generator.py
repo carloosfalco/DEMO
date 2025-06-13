@@ -4,7 +4,7 @@ import pandas as pd
 st.set_page_config(page_title="Resumen de Cargas y Descargas", page_icon="📲", layout="wide")
 
 st.title("📲 Instrucciones de Ruta para el Conductor")
-st.markdown("Sube el archivo de Trans2000. El mensaje incluirá espacios para rellenar manualmente horas y nº de pedido.")
+st.markdown("Sube el archivo de Trans2000. El mensaje incluirá una sola línea para el nº de pedido, y una hora por parada.")
 
 # Subida del archivo
 uploaded_file = st.file_uploader("📁 Sube el archivo Excel de Trans2000", type=["xlsx"])
@@ -18,12 +18,13 @@ if uploaded_file:
         df = df.sort_values(by=['Fecha', 'Tipo'], ascending=[True, True])
 
         instrucciones = "🚛 *INSTRUCCIONES DE RUTA*\n\n"
+        instrucciones += "📝 Nº de pedido: ________\n\n"
+
         for _, row in df.iterrows():
             tipo = "*CARGA*" if row['Tipo'].lower() == 'carga' else "*DESCARGA*"
             instrucciones += (
                 f"🔹 {tipo} - {row['Fecha'].strftime('%d/%m/%Y')}\n"
                 f"⏰ Hora: ________\n"
-                f"📝 Pedido: ________\n"
                 f"📍 {row['Nombre']}\n"
                 f"🏠 {row['Domicilio']}, {row['Población']} ({row['Provincia']})\n"
                 f"📦 Albarán: {row['Albarán']} | Palets: {int(row['Palets'])}\n\n"
