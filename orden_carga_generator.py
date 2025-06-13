@@ -35,7 +35,7 @@ if uploaded_file:
 
         # Mostrar y copiar
         st.code(mensaje_final, language=None)
-        st.download_button("📋 Copiar mensaje (descargar .txt)", mensaje_final, file_name="instrucciones_ruta.txt")
+
 
     except Exception as e:
         st.error(f"❌ Error al procesar el archivo: {e}")
