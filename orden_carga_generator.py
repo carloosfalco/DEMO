@@ -1,10 +1,10 @@
 import streamlit as st
 import pandas as pd
 
-st.set_page_config(page_title="Orden de carga por WhatsApp", page_icon="📲", layout="wide")
+st.set_page_config(page_title="Resumen de Cargas y Descargas", page_icon="📲", layout="wide")
 
-st.title("📲 Generador de Mensajes de Carga para WhatsApp")
-st.markdown("Sube el archivo de Trans2000 y copia los mensajes para enviar a los conductores.")
+st.title("📲 Instrucciones de Ruta para el Conductor")
+st.markdown("Sube el archivo exportado de Trans2000 para generar un único mensaje con todas las paradas.")
 
 # Subida del archivo
 uploaded_file = st.file_uploader("📁 Sube el archivo Excel de Trans2000", type=["xlsx"])
@@ -13,25 +13,21 @@ if uploaded_file:
     try:
         df = pd.read_excel(uploaded_file, sheet_name="Hoja1")
 
-        # Filtrar solo cargas
-        cargas = df[df['Tipo'].str.lower() == 'carga'].copy()
+        # Filtramos solo columnas relevantes y ordenamos por fecha y tipo
+        df = df[['Fecha', 'Tipo', 'Nombre', 'Albarán', 'Domicilio', 'Población', 'Provincia', 'Palets']]
+        df = df.sort_values(by=['Fecha', 'Tipo'], ascending=[True, True])
 
-        # Generar mensajes
-        mensajes = []
-        for _, row in cargas.iterrows():
-            msg = f"""🚛 *Orden de carga #{int(row['Orden']):03d}*
+        instrucciones = "🚛 *INSTRUCCIONES DE RUTA*\n\n"
+        for _, row in df.iterrows():
+            tipo = "🟢 *Carga*" if row['Tipo'].lower() == 'carga' else "🔴 *Descarga*"
+            instrucciones += (
+                f"{tipo} - {row['Fecha'].strftime('%d/%m/%Y')}\n"
+                f"📍 {row['Nombre']}\n"
+                f"🏠 {row['Domicilio']}, {row['Población']} ({row['Provincia']})\n"
+                f"📦 Albarán: {row['Albarán']} | Palets: {int(row['Palets'])}\n\n"
+            )
 
-📅 Fecha: {row['Fecha'].strftime('%d/%m/%Y')}
-🏢 Cliente: {row['Nombre']}
-📦 Albarán: {row['Albarán']}
-📍 Dirección: {row['Domicilio']}, {row['Población']} ({row['Provincia']})
-📦 Palets: {int(row['Palets'])}
-"""
-            mensajes.append(msg)
-
-        # Mostrar todos los mensajes con opción de copiar
-        for i, msg in enumerate(mensajes):
-            st.text_area(f"Mensaje {i+1}", value=msg, height=180, key=f"msg_{i}")
+        st.text_area("Mensaje único para enviar por WhatsApp", value=instrucciones.strip(), height=500)
 
     except Exception as e:
         st.error(f"❌ Error al procesar el archivo: {e}")
