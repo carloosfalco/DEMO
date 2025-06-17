@@ -1,7 +1,7 @@
 import streamlit as st
 from datetime import date
 
-def generar_orden_carga():
+def generar_orden_carga_manual():
     st.title("📦 Generador de Orden de Carga")
     st.markdown("Completa los siguientes datos para generar una orden.")
 
