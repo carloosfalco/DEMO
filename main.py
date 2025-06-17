@@ -19,7 +19,7 @@ def main():
     elif seleccion == "Orden de carga (Excel)":
         generar_instrucciones_ruta()
     elif seleccion == "Orden de carga (Manual)":
-        generar_instrucciones_ruta_manual()
+        generar_orden_carga_manual()
 
 if __name__ == "__main__":
     main()
