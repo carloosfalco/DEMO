@@ -11,7 +11,7 @@ def main():
     seleccion = st.sidebar.radio("Selecciona una opción", [
         "Planificador de rutas",
         "Orden de carga (Excel)",
-        "Orden de carga (Manual)
+        "Orden de carga (Manual)"
     ])
 
     if seleccion == "Planificador de rutas":
