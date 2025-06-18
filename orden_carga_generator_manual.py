@@ -46,7 +46,7 @@ def generar_orden_carga_manual():
         mensaje += "\n🎯 Descargas:\n"
         for i, (destino, fecha_descarga, hora_descarga, ref) in enumerate(destinos):
             if destino.strip():
-                mensaje += f"  - Destino {i+1}: {destino} ({fecha_descarga.strftime('%d/%m/%Y')} a las {hora_descarga}, Ref. cliente: {ref})\n"
+                mensaje += f"  - Destino {i+1}: {destino} ({fecha_descarga.strftime('%d/%m/%Y')}, {hora_descarga}, Ref. cliente: {ref})\n"
 
         if tipo_mercancia.strip():
             mensaje += f"\n📦 Tipo de mercancía: {tipo_mercancia.strip()}"
