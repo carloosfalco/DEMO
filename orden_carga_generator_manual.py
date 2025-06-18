@@ -9,24 +9,7 @@ def generar_orden_carga_manual():
         chofer = st.text_input("Nombre del chofer")
         fecha_carga = st.date_input("📅 Fecha de carga", value=date.today())
         ref_interna = st.text_input("🔐 Referencia interna")
-
-        num_origenes = st.number_input("Número de ubicaciones de carga", min_value=1, max_value=5, value=1)
-        origenes = []
-        for i in range(num_origenes):
-            origen = st.text_input(f"📍 Origen {i+1}", key=f"origen_{i}")
-            hora_carga = st.time_input(f"🕒 Hora de carga Origen {i+1}", key=f"hora_carga_{i}")
-            origenes.append((origen, hora_carga))
-import streamlit as st
-from datetime import date
-
-def generar_orden_carga_manual():
-    st.title("📦 Generador de Orden de Carga")
-    st.markdown("Completa los siguientes datos para generar una orden.")
-
-    with st.form("orden_form"):
-        chofer = st.text_input("Nombre del chofer")
-        fecha_carga = st.date_input("📅 Fecha de carga", value=date.today())
-        ref_interna = st.text_input("🔐 Referencia interna")
+        ref_carga = st.text_input("🔖 Referencia de carga (opcional)")
 
         num_origenes = st.number_input("Número de ubicaciones de carga", min_value=1, max_value=5, value=1)
         origenes = []
@@ -51,8 +34,11 @@ def generar_orden_carga_manual():
 
     if submitted:
         mensaje = f"Hola {chofer}, esta es la orden de carga para el día {fecha_carga.strftime('%d/%m/%Y')}:\n\n"
-        mensaje += f"🔐 Ref. interna: {ref_interna}\n\n📍 Cargas:\n"
+        mensaje += f"🔐 Ref. interna: {ref_interna}\n"
+        if ref_carga.strip():
+            mensaje += f"🔖 Ref. de carga: {ref_carga.strip()}\n"
 
+        mensaje += "\n📍 Cargas:\n"
         for i, (origen, hora) in enumerate(origenes):
             if origen.strip():
                 mensaje += f"  - Origen {i+1}: {origen} ({hora.strftime('%H:%M')}H)\n"
@@ -73,7 +59,3 @@ def generar_orden_carga_manual():
 
         st.markdown("### ✉️ Orden generada:")
         st.code(mensaje, language="markdown")
-
-        st.markdown("### ✉️ Orden generada:")
-        st.code(mensaje, language="markdown")
-
