@@ -12,7 +12,7 @@ def planificador_rutas():
     api_key = "5b3ce3597851110001cf6248ec3aedee3fa14ae4b1fd1b2440f2e589"
     client = openrouteservice.Client(key=api_key)
 
-    # Estilo visual (puedes mantenerlo)
+    # Estilo visual
     st.markdown("""
         <style>
             body {
@@ -49,6 +49,8 @@ def planificador_rutas():
         hora_salida_str = st.time_input("🕒 Hora de salida", value=datetime.strptime("08:00", "%H:%M")).strftime("%H:%M")
 
     stops = st.text_area("➕ Paradas intermedias (una por línea)", placeholder="Ej: Albacete, España\nCuenca, España")
+
+    sumar_descanso_diario = st.checkbox("¿Añadir siempre descanso diario de 11h?", value=False)
 
     if st.button("🔍 Calcular Ruta"):
         st.session_state.resultados = None
@@ -89,7 +91,7 @@ def planificador_rutas():
         duracion_horas = duracion_total / 3600
         descansos = math.floor(duracion_horas / 4.5)
         tiempo_total_h = duracion_horas + descansos * 0.75
-        descanso_diario_h = 11 if tiempo_total_h > 13 else 0
+        descanso_diario_h = 11 if (tiempo_total_h > 13 or sumar_descanso_diario) else 0
         tiempo_total_real_h = tiempo_total_h + descanso_diario_h
         hora_salida = datetime.strptime(hora_salida_str, "%H:%M")
         hora_llegada = hora_salida + timedelta(hours=tiempo_total_real_h)
@@ -126,6 +128,8 @@ def planificador_rutas():
 
         if r['tiempo_total_real_h'] > 13:
             st.warning("⚠️ El viaje excede la jornada máxima (13h). Se ha añadido un descanso obligatorio de 11h.")
+        elif sumar_descanso_diario:
+            st.info("ℹ️ Se ha añadido un descanso diario de 11h por elección del usuario.")
         else:
             st.success("🟢 El viaje puede completarse en una sola jornada de trabajo.")
 
