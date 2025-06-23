@@ -1,6 +1,5 @@
 import streamlit as st
 from datetime import date
-import calendar
 
 # Diccionario para traducir días de la semana
 DIAS_SEMANA_ES = {
@@ -15,10 +14,10 @@ DIAS_SEMANA_ES = {
 
 def formatear_fecha_con_dia(fecha):
     dia_en = fecha.strftime('%A')  # Día en inglés
-    dia_es = DIAS_SEMANA_ES.get(dia_en, dia_en)  # Traducir
+    dia_es = DIAS_SEMANA_ES.get(dia_en, dia_en)  # Traducir al español
     return f"{dia_es} {fecha.strftime('%d/%m')}"
 
-def generar_orden_carga_manual():
+def planificador_rutas():  # <- renombrada aquí
     st.title("📦 Generador de Orden de Carga")
     st.markdown("Completa los siguientes datos para generar una orden.")
 
