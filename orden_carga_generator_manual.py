@@ -17,7 +17,7 @@ def formatear_fecha_con_dia(fecha):
     dia_es = DIAS_SEMANA_ES.get(dia_en, dia_en)  # Traducir al español
     return f"{dia_es} {fecha.strftime('%d/%m')}"
 
-def planificador_rutas():
+def generar_orden_carga_manual():
     st.title("📦 Generador de Orden de Carga")
     st.markdown("Completa los siguientes datos para generar una orden.")
 
