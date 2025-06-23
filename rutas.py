@@ -8,11 +8,9 @@ from streamlit_folium import st_folium
 from PIL import Image
 
 def planificador_rutas():
-    # Configuración de cliente
     api_key = "5b3ce3597851110001cf6248ec3aedee3fa14ae4b1fd1b2440f2e589"
     client = openrouteservice.Client(key=api_key)
 
-    # Estilo visual
     st.markdown("""
         <style>
             body {
@@ -33,24 +31,22 @@ def planificador_rutas():
         </style>
     """, unsafe_allow_html=True)
 
-    # Logo y encabezado
     logo = Image.open("logo-virosque2-01.png")
     st.image(logo, width=250)
     st.markdown("<h1 style='color:#8D1B2D;'>TMS</h1>", unsafe_allow_html=True)
     st.markdown("<p style='color:white; font-size: 18px; font-weight: bold;'>Planificador de rutas para camiones</p>", unsafe_allow_html=True)
 
-    # Inputs
     col1, col2, col3 = st.columns(3)
     with col1:
-        origen = st.text_input("📍 Origen", value="Valencia, España")
+        origen = st.text_input("\ud83d\udccd Origen", value="Valencia, Espa\u00f1a")
     with col2:
-        destino = st.text_input("🏁 Destino", value="Madrid, España")
+        destino = st.text_input("\ud83c\udf1f Destino", value="Madrid, Espa\u00f1a")
     with col3:
-        hora_salida_str = st.time_input("🕒 Hora de salida", value=datetime.strptime("08:00", "%H:%M")).strftime("%H:%M")
+        hora_salida_str = st.time_input("\ud83d\udd52 Hora de salida", value=datetime.strptime("08:00", "%H:%M")).strftime("%H:%M")
 
-    stops = st.text_area("➕ Paradas intermedias (una por línea)", placeholder="Ej: Albacete, España\nCuenca, España")
+    stops = st.text_area("\u2795 Paradas intermedias (una por l\u00ednea)", placeholder="Ej: Albacete, Espa\u00f1a\nCuenca, Espa\u00f1a")
 
-    if st.button("🔍 Calcular Ruta"):
+    if st.button("\ud83d\udd0d Calcular Ruta"):
         st.session_state.resultados = None
 
         coord_origen, _ = geocode(origen, api_key)
@@ -63,25 +59,36 @@ def planificador_rutas():
                 if coord:
                     stops_list.append(coord)
                 else:
-                    st.warning(f"❌ No se pudo geolocalizar: {parada}")
+                    st.warning(f"\u274c No se pudo geolocalizar: {parada}")
 
         if not coord_origen or not coord_destino:
-            st.error("❌ No se pudo geolocalizar el origen o destino.")
+            st.error("\u274c No se pudo geolocalizar el origen o destino.")
             return
 
         coords_totales = [coord_origen] + stops_list + [coord_destino]
 
-        try:
-            ruta = client.directions(
-                coordinates=coords_totales,
-                profile='driving-hgv',
-                format='geojson'
-            )
-        except openrouteservice.exceptions.ApiError as e:
-            st.error(f"❌ Error al calcular la ruta: {e}")
+        preferencias = ["recommended", "fastest", "shortest"]
+        rutas = []
+        errores = []
+
+        for pref in preferencias:
+            try:
+                ruta = client.directions(
+                    coordinates=coords_totales,
+                    profile='driving-hgv',
+                    preference=pref,
+                    format='geojson'
+                )
+                rutas.append((pref, ruta))
+            except openrouteservice.exceptions.ApiError as e:
+                errores.append((pref, str(e)))
+
+        if not rutas:
+            st.error("\u274c No se pudieron calcular rutas. Errores: " + ", ".join([f"{p}: {e}" for p, e in errores]))
             return
 
-        segmentos = ruta['features'][0]['properties']['segments']
+        ruta_principal = [r for r in rutas if r[0] == "recommended"][0][1]
+        segmentos = ruta_principal['features'][0]['properties']['segments']
         distancia_total = sum(seg["distance"] for seg in segmentos)
         duracion_total = sum(seg["duration"] for seg in segmentos)
 
@@ -110,7 +117,7 @@ def planificador_rutas():
             "hora_llegada_dt": hora_llegada,
             "hora_salida_dt": hora_salida,
             "tiempo_total_real_h": tiempo_total_real_h,
-            "linea": ruta["features"][0]["geometry"]["coordinates"],
+            "rutas": rutas,
             "coord_origen": coord_origen,
             "stops_list": stops_list,
             "coord_destino": coord_destino
@@ -119,32 +126,37 @@ def planificador_rutas():
     if "resultados" in st.session_state and st.session_state.resultados:
         r = st.session_state.resultados
 
-        st.markdown("### 📊 Datos de la ruta")
+        st.markdown("### \ud83d\udcca Datos de la ruta")
         col1, col2, col3, col4, col5 = st.columns(5)
-        col1.metric("🚣 Distancia", f"{r['distancia_km']:.2f} km")
-        col2.metric("🕓 Conducción", r['tiempo_conduccion_txt'])
-        col3.metric("⏱ Total (con descansos)", r['tiempo_total_txt'])
-        col4.metric("📅 Llegada estimada", r['hora_llegada'])
+        col1.metric("\ud83d\udea3 Distancia", f"{r['distancia_km']:.2f} km")
+        col2.metric("\ud83d\udd53 Conducci\u00f3n", r['tiempo_conduccion_txt'])
+        col3.metric("\u23f1 Total (con descansos)", r['tiempo_total_txt'])
+        col4.metric("\ud83d\udcc5 Llegada estimada", r['hora_llegada'])
 
         if r['tiempo_total_real_h'] > 13:
-            st.warning("⚠️ El viaje excede la jornada máxima (13h). Se ha añadido un descanso obligatorio de 11h.")
+            st.warning("\u26a0\ufe0f El viaje excede la jornada m\u00e1xima (13h). Se ha a\u00f1adido un descanso obligatorio de 11h.")
         else:
-            st.success("🟢 El viaje puede completarse en una sola jornada de trabajo.")
-
-            # Calcular llegada tras descanso voluntario de 11h
+            st.success("\ud83d\udfe2 El viaje puede completarse en una sola jornada de trabajo.")
             llegada_tras_descanso = r["hora_llegada_dt"] + timedelta(hours=11)
             cambia_dia = llegada_tras_descanso.date() > r["hora_llegada_dt"].date()
-            etiqueta = " (día siguiente)" if cambia_dia else ""
-            col5.metric("🛌 Llegada + descanso", llegada_tras_descanso.strftime("%H:%M") + etiqueta)
+            etiqueta = " (d\u00eda siguiente)" if cambia_dia else ""
+            col5.metric("\ud83d\udecc Llegada + descanso", llegada_tras_descanso.strftime("%H:%M") + etiqueta)
 
-        linea_latlon = [[p[1], p[0]] for p in r['linea']]
+        linea_latlon = [[p[1], p[0]] for p in r["rutas"][0][1]["features"][0]["geometry"]["coordinates"]]
         m = folium.Map(location=linea_latlon[0], zoom_start=6)
-        folium.Marker(location=[r['coord_origen'][1], r['coord_origen'][0]], tooltip="📍 Origen").add_to(m)
+
+        folium.Marker(location=[r['coord_origen'][1], r['coord_origen'][0]], tooltip="\ud83d\udccd Origen").add_to(m)
         for idx, parada in enumerate(r['stops_list']):
             folium.Marker(location=[parada[1], parada[0]], tooltip=f"Parada {idx + 1}").add_to(m)
         folium.Marker(location=[r['coord_destino'][1], r['coord_destino'][0]], tooltip="Destino").add_to(m)
-        folium.PolyLine(linea_latlon, color="blue", weight=5).add_to(m)
-        st.markdown("### 🗘️ Ruta estimada en mapa:")
+
+        colores = ["blue", "green", "purple", "orange"]
+        for i, (pref, ruta) in enumerate(r["rutas"]):
+            coords = ruta["features"][0]["geometry"]["coordinates"]
+            linea = [[p[1], p[0]] for p in coords]
+            folium.PolyLine(linea, color=colores[i % len(colores)], weight=5, tooltip=f"Ruta: {pref}").add_to(m)
+
+        st.markdown("### \ud83d\udd98\ufe0f Rutas alternativas en el mapa:")
         st_folium(m, width=1200, height=500)
 
 def geocode(direccion, api_key):
