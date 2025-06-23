@@ -8,11 +8,9 @@ from streamlit_folium import st_folium
 from PIL import Image
 
 def planificador_rutas():
-    # Configuración de cliente
     api_key = "5b3ce3597851110001cf6248ec3aedee3fa14ae4b1fd1b2440f2e589"
     client = openrouteservice.Client(key=api_key)
 
-    # Estilo visual
     st.markdown("""
         <style>
             body {
@@ -33,13 +31,11 @@ def planificador_rutas():
         </style>
     """, unsafe_allow_html=True)
 
-    # Logo y encabezado
     logo = Image.open("logo-virosque2-01.png")
     st.image(logo, width=250)
     st.markdown("<h1 style='color:#8D1B2D;'>TMS</h1>", unsafe_allow_html=True)
     st.markdown("<p style='color:white; font-size: 18px; font-weight: bold;'>Planificador de rutas para camiones</p>", unsafe_allow_html=True)
 
-    # Inputs
     col1, col2, col3 = st.columns(3)
     with col1:
         origen = st.text_input("📍 Origen", value="Valencia, España")
@@ -49,6 +45,9 @@ def planificador_rutas():
         hora_salida_str = st.time_input("🕒 Hora de salida", value=datetime.strptime("08:00", "%H:%M")).strftime("%H:%M")
 
     stops = st.text_area("➕ Paradas intermedias (una por línea)", placeholder="Ej: Albacete, España\nCuenca, España")
+
+    # Selector de tipo de ruta
+    preferencia = st.selectbox("🛣️ Tipo de ruta", options=["recommended", "fastest", "shortest"], index=0)
 
     if st.button("🔍 Calcular Ruta"):
         st.session_state.resultados = None
@@ -75,6 +74,7 @@ def planificador_rutas():
             ruta = client.directions(
                 coordinates=coords_totales,
                 profile='driving-hgv',
+                preference=preferencia,
                 format='geojson'
             )
         except openrouteservice.exceptions.ApiError as e:
@@ -131,7 +131,6 @@ def planificador_rutas():
         else:
             st.success("🟢 El viaje puede completarse en una sola jornada de trabajo.")
 
-            # Calcular llegada tras descanso voluntario de 11h
             llegada_tras_descanso = r["hora_llegada_dt"] + timedelta(hours=11)
             cambia_dia = llegada_tras_descanso.date() > r["hora_llegada_dt"].date()
             etiqueta = " (día siguiente)" if cambia_dia else ""
