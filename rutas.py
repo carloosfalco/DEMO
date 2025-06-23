@@ -50,8 +50,6 @@ def planificador_rutas():
 
     stops = st.text_area("➕ Paradas intermedias (una por línea)", placeholder="Ej: Albacete, España\nCuenca, España")
 
-    sumar_descanso_diario = st.checkbox("¿Añadir siempre descanso diario de 11h?", value=False)
-
     if st.button("🔍 Calcular Ruta"):
         st.session_state.resultados = None
 
@@ -91,7 +89,7 @@ def planificador_rutas():
         duracion_horas = duracion_total / 3600
         descansos = math.floor(duracion_horas / 4.5)
         tiempo_total_h = duracion_horas + descansos * 0.75
-        descanso_diario_h = 11 if (tiempo_total_h > 13 or sumar_descanso_diario) else 0
+        descanso_diario_h = 11 if tiempo_total_h > 13 else 0
         tiempo_total_real_h = tiempo_total_h + descanso_diario_h
         hora_salida = datetime.strptime(hora_salida_str, "%H:%M")
         hora_llegada = hora_salida + timedelta(hours=tiempo_total_real_h)
@@ -109,6 +107,8 @@ def planificador_rutas():
             "tiempo_conduccion_txt": tiempo_conduccion_txt,
             "tiempo_total_txt": tiempo_total_txt,
             "hora_llegada": hora_llegada.strftime("%H:%M"),
+            "hora_llegada_dt": hora_llegada,
+            "hora_salida_dt": hora_salida,
             "tiempo_total_real_h": tiempo_total_real_h,
             "linea": ruta["features"][0]["geometry"]["coordinates"],
             "coord_origen": coord_origen,
@@ -120,7 +120,7 @@ def planificador_rutas():
         r = st.session_state.resultados
 
         st.markdown("### 📊 Datos de la ruta")
-        col1, col2, col3, col4 = st.columns(4)
+        col1, col2, col3, col4, col5 = st.columns(5)
         col1.metric("🚣 Distancia", f"{r['distancia_km']:.2f} km")
         col2.metric("🕓 Conducción", r['tiempo_conduccion_txt'])
         col3.metric("⏱ Total (con descansos)", r['tiempo_total_txt'])
@@ -128,10 +128,14 @@ def planificador_rutas():
 
         if r['tiempo_total_real_h'] > 13:
             st.warning("⚠️ El viaje excede la jornada máxima (13h). Se ha añadido un descanso obligatorio de 11h.")
-        elif sumar_descanso_diario:
-            st.info("ℹ️ Se ha añadido un descanso diario de 11h por elección del usuario.")
         else:
             st.success("🟢 El viaje puede completarse en una sola jornada de trabajo.")
+
+            # Calcular llegada tras descanso voluntario de 11h
+            llegada_tras_descanso = r["hora_llegada_dt"] + timedelta(hours=11)
+            cambia_dia = llegada_tras_descanso.date() > r["hora_llegada_dt"].date()
+            etiqueta = " (día siguiente)" if cambia_dia else ""
+            col5.metric("🛌 Llegada + descanso", llegada_tras_descanso.strftime("%H:%M") + etiqueta)
 
         linea_latlon = [[p[1], p[0]] for p in r['linea']]
         m = folium.Map(location=linea_latlon[0], zoom_start=6)
