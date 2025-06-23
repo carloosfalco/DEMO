@@ -13,8 +13,8 @@ DIAS_SEMANA_ES = {
 }
 
 def formatear_fecha_con_dia(fecha):
-    dia_en = fecha.strftime('%A')  # Día en inglés
-    dia_es = DIAS_SEMANA_ES.get(dia_en, dia_en)  # Traducir al español
+    dia_en = fecha.strftime('%A')
+    dia_es = DIAS_SEMANA_ES.get(dia_en, dia_en)
     return f"{dia_es} {fecha.strftime('%d/%m')}"
 
 def generar_orden_carga_manual():
