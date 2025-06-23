@@ -110,12 +110,10 @@ def planificador_rutas():
             "tiempo_total_txt": tiempo_total_txt,
             "hora_llegada": hora_llegada.strftime("%H:%M"),
             "tiempo_total_real_h": tiempo_total_real_h,
-            "tiempo_total_h": tiempo_total_h,
             "linea": ruta["features"][0]["geometry"]["coordinates"],
             "coord_origen": coord_origen,
             "stops_list": stops_list,
-            "coord_destino": coord_destino,
-            "sumar_descanso_diario": sumar_descanso_diario
+            "coord_destino": coord_destino
         }
 
     if "resultados" in st.session_state and st.session_state.resultados:
@@ -128,9 +126,9 @@ def planificador_rutas():
         col3.metric("⏱ Total (con descansos)", r['tiempo_total_txt'])
         col4.metric("📅 Llegada estimada", r['hora_llegada'])
 
-        if r['tiempo_total_h'] > 13:
+        if r['tiempo_total_real_h'] > 13:
             st.warning("⚠️ El viaje excede la jornada máxima (13h). Se ha añadido un descanso obligatorio de 11h.")
-        elif r['sumar_descanso_diario']:
+        elif sumar_descanso_diario:
             st.info("ℹ️ Se ha añadido un descanso diario de 11h por elección del usuario.")
         else:
             st.success("🟢 El viaje puede completarse en una sola jornada de trabajo.")
