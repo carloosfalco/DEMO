@@ -63,7 +63,10 @@ def generar_orden_carga_manual():
                     linea += f" ({hora}H)"
                 cargas.append(linea)
                 if ref_carga:
-                    cargas.append(f"    ↪️ Ref. carga: {ref_carga}")
+                    ref_lines = ref_carga.splitlines()
+                    cargas.append(f"    ↪️ Ref. carga: {ref_lines[0]}")
+                    for line in ref_lines[1:]:
+                        cargas.append(f"                   {line}")
         if cargas:
             mensaje += "📍 Cargas:\n" + "\n".join(cargas) + "\n"
 
@@ -80,7 +83,10 @@ def generar_orden_carga_manual():
                     linea += f" ({', '.join(detalles)})"
                 descargas.append(linea)
                 if ref_cliente:
-                    descargas.append(f"    ↪️ Ref. cliente: {ref_cliente}")
+                    ref_lines = ref_cliente.splitlines()
+                    descargas.append(f"    ↪️ Ref. cliente: {ref_lines[0]}")
+                    for line in ref_lines[1:]:
+                        descargas.append(f"                     {line}")
         if descargas:
             mensaje += "\n🎯 Descargas:\n" + "\n".join(descargas) + "\n"
 
