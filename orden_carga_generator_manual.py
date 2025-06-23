@@ -14,7 +14,7 @@ def generar_orden_carga_manual():
         origenes = []
         for i in range(num_origenes):
             origen = st.text_input(f"📍 Origen {i+1}", key=f"origen_{i}")
-            hora_carga = st.text_input(f"🕒 Hora de carga Origen {i+1} (ej: 08:30)", key=f"hora_carga_{i}")
+            hora_carga = st.text_input(f"🕒 Hora de carga Origen {i+1}", key=f"hora_carga_{i}")
             ref_carga = st.text_input(f"🔖 Ref. de carga Origen {i+1}", key=f"ref_carga_{i}")
             origenes.append((origen, hora_carga, ref_carga))
 
