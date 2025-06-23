@@ -1,7 +1,17 @@
 import streamlit as st
 from datetime import date
+import locale
 
 def generar_orden_carga_manual():
+    # Establecer idioma a español para fechas
+    try:
+        locale.setlocale(locale.LC_TIME, 'es_ES.UTF-8')  # Para Linux/Mac
+    except:
+        try:
+            locale.setlocale(locale.LC_TIME, 'Spanish_Spain')  # Para Windows
+        except:
+            st.warning("⚠️ No se pudo aplicar el formato regional español. El día de la semana puede aparecer en inglés.")
+
     st.title("📦 Generador de Orden de Carga")
     st.markdown("Completa los siguientes datos para generar una orden.")
 
@@ -33,7 +43,7 @@ def generar_orden_carga_manual():
         submitted = st.form_submit_button("Generar orden")
 
     if submitted:
-        mensaje = f"Hola {chofer}, esta es la orden de carga para el día {fecha_carga.strftime('%d/%m/%Y')}:\n\n"
+        mensaje = f"Hola {chofer}, esta es la orden de carga para el día {fecha_carga.strftime('%A %d/%m')}:\n\n"
         mensaje += f"🔐 Ref. interna: {ref_interna}\n\n📍 Cargas:\n"
 
         for i, (origen, hora, ref_carga) in enumerate(origenes):
@@ -46,7 +56,7 @@ def generar_orden_carga_manual():
         mensaje += "\n🎯 Descargas:\n"
         for i, (destino, fecha_descarga, hora_descarga, ref) in enumerate(destinos):
             if destino.strip():
-                mensaje += f"  - Destino {i+1}: {destino} ({fecha_descarga.strftime('%d/%m/%Y')}, {hora_descarga}, Ref. cliente: {ref})\n"
+                mensaje += f"  - Destino {i+1}: {destino} ({fecha_descarga.strftime('%A %d/%m')}, {hora_descarga}, Ref. cliente: {ref})\n"
 
         if tipo_mercancia.strip():
             mensaje += f"\n📦 Tipo de mercancía: {tipo_mercancia.strip()}"
