@@ -31,7 +31,7 @@ def generar_orden_carga_manual():
         for i in range(num_origenes):
             origen = st.text_input(f"📍 Origen {i+1}", key=f"origen_{i}")
             hora_carga = st.text_input(f"🕒 Hora de carga Origen {i+1}", key=f"hora_carga_{i}")
-            ref_carga = st.text_input(f"🔖 Ref. de carga Origen {i+1}", key=f"ref_carga_{i}")
+            ref_carga = st.text_area(f"🔖 Ref. de carga Origen {i+1}", key=f"ref_carga_{i}")
             origenes.append((origen.strip(), hora_carga.strip(), ref_carga.strip()))
 
         num_destinos = st.number_input("Número de ubicaciones de descarga", min_value=1, max_value=5, value=1)
@@ -40,7 +40,7 @@ def generar_orden_carga_manual():
             destino = st.text_input(f"🎯 Destino {i+1}", key=f"destino_{i}")
             fecha_descarga = st.date_input(f"📅 Fecha de descarga Destino {i+1}", value=date.today(), key=f"fecha_descarga_{i}")
             hora_descarga = st.text_input(f"🕓 Hora de descarga Destino {i+1}", key=f"hora_descarga_{i}")
-            ref_cliente = st.text_input(f"📌 Referencia cliente Destino {i+1}", key=f"ref_cliente_{i}")
+            ref_cliente = st.text_area(f"📌 Referencia cliente Destino {i+1}", key=f"ref_cliente_{i}")
             destinos.append((destino.strip(), fecha_descarga, hora_descarga.strip(), ref_cliente.strip()))
 
         tipo_mercancia = st.text_input("📦 Tipo de mercancía (opcional)").strip()
