@@ -21,7 +21,7 @@ def generar_orden_carga_manual():
     st.title("📦 Generador de Orden de Carga")
     st.markdown("Completa los siguientes datos para generar una orden.")
 
-    # Inicializar valores en session_state
+    # Inicializar session_state si es necesario
     if "num_origenes" not in st.session_state:
         st.session_state.num_origenes = 1
     if "num_destinos" not in st.session_state:
@@ -62,16 +62,15 @@ def generar_orden_carga_manual():
             incluir_link = incluir_todos_links or _incluir_link
             destinos.append((destino.strip(), fecha_descarga, hora_descarga.strip(), ref_cliente.strip(), incluir_link))
 
-        # BOTÓN para añadir otra carga
-        if st.form_submit_button("➕ Añadir otra carga"):
-            st.session_state.num_origenes += 1
-            st.experimental_rerun()
-
-        # CAMPOS FINALES
         tipo_mercancia = st.text_input("📦 Tipo de mercancía (opcional)", key="tipo_mercancia").strip()
         observaciones = st.text_area("📜 Observaciones (opcional)", key="observaciones").strip()
 
         submitted = st.form_submit_button("Generar orden")
+
+    # 🔘 Botón fuera del formulario para añadir otra carga
+    if st.button("➕ Añadir otra carga"):
+        st.session_state.num_origenes += 1
+        st.experimental_rerun()
 
     if submitted:
         mensaje = f"Hola {chofer}," if chofer else "Hola,"
