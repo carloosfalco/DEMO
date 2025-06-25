@@ -19,6 +19,8 @@ def generar_enlace_maps(ubicacion):
 
 def generar_orden_carga_manual():
     if "nueva_orden" in st.query_params:
+        for key in list(st.session_state.keys()):
+            del st.session_state[key]
         st.query_params.clear()
         st.rerun()
 
