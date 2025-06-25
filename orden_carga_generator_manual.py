@@ -47,7 +47,7 @@ def generar_orden_carga_manual():
         num_destinos = st.number_input("Número de ubicaciones de descarga", min_value=1, max_value=5, value=1)
         destinos = []
         for i in range(num_destinos):
-            st.markdown(f"#### 🎯 Destino {i+1}")
+            st.markdown(f"#### 📍 Destino {i+1}")
             destino = st.text_input(f"Dirección Destino {i+1}", key=f"destino_{i}")
             fecha_descarga = st.date_input(f"📅 Fecha de descarga Destino {i+1}", value=date.today(), key=f"fecha_descarga_{i}")
             hora_descarga = st.text_input(f"🕓 Hora de descarga Destino {i+1}", key=f"hora_descarga_{i}")
@@ -62,9 +62,9 @@ def generar_orden_carga_manual():
         # Botones en la misma fila
         col1, col2 = st.columns([4, 1])
         with col1:
-            submitted = st.form_submit_button("✅ Generar orden")
+            submitted = st.form_submit_button("Generar orden")
         with col2:
-            borrar = st.form_submit_button("🗑️ Borrar todo")
+            borrar = st.form_submit_button("Borrar todo")
 
     if borrar:
         st.session_state.confirmar_borrado = True
@@ -131,7 +131,7 @@ def generar_orden_carga_manual():
                     enlace = generar_enlace_maps(destino)
                     descargas.append(f"    🌐 {enlace}")
         if descargas:
-            mensaje += "\n🎯 Descargas:\n" + "\n".join(descargas) + "\n"
+            mensaje += "\n📍 Descargas:\n" + "\n".join(descargas) + "\n"
 
         if tipo_mercancia:
             mensaje += f"\n📦 Tipo de mercancía: {tipo_mercancia}"
