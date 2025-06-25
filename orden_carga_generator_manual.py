@@ -25,11 +25,12 @@ def generar_orden_carga_manual():
         st.session_state.resetear = False
 
     if st.session_state.resetear:
-        for key in list(st.session_state.keys()):
-            if key not in ["resetear"]:
-                del st.session_state[key]
+        claves_a_borrar = [k for k in st.session_state.keys() if not k.startswith("_") and k != "resetear"]
+        for k in claves_a_borrar:
+            del st.session_state[k]
         st.session_state.resetear = False
         st.success("✅ Campos vaciados con éxito")
+        st.stop()
 
     with st.form("orden_form"):
         chofer = st.text_input("Nombre del chofer", key="chofer")
