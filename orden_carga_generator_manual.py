@@ -194,6 +194,6 @@ def generar_orden_carga_manual():
         st.code(mensaje.strip(), language="markdown")
 
         # Botón de limpieza debajo del mensaje
-        if st.button("🧹 Limpiar formulario"):
+        if st.button("🪟 Limpiar formulario"):
             st.session_state.clear()
             st.experimental_rerun()
