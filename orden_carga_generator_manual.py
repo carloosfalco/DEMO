@@ -21,8 +21,21 @@ def generar_orden_carga_manual():
     st.title("📦 Generador de Orden de Carga")
     st.markdown("Completa los siguientes datos para generar una orden.")
 
-    if st.button("🧹 Nueva orden"):
+    # Manejo seguro de reinicio de orden
+    if st.session_state.get("reiniciar_orden", False):
+        for key in list(st.session_state.keys()):
+            if key.startswith((
+                "chofer", "fecha_carga", "ref_interna", "tipo_mercancia", "observaciones",
+                "origen_", "hora_carga_", "ref_carga_", "link_origen_",
+                "destino_", "fecha_descarga_", "hora_descarga_", "ref_cliente_", "link_destino_",
+                "num_origenes", "num_destinos", "incluir_todos_links"
+            )):
+                del st.session_state[key]
+        st.session_state["reiniciar_orden"] = False
         st.experimental_rerun()
+
+    if st.button("🧹 Nueva orden"):
+        st.session_state["reiniciar_orden"] = True
 
     with st.form("orden_form"):
         chofer = st.text_input("Nombre del chofer", key="chofer")
