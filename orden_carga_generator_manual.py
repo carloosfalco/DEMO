@@ -80,7 +80,7 @@ def generar_orden_carga_manual():
                                        "orden_form", "Nombre del chofer", "📦", "📝", "🔐", "incluir_todos_links")):
                         del st.session_state[key]
                 st.session_state.confirmar_borrado = False
-                st.experimental_rerun()
+                st.session_state.reiniciar = True  # 🟢 Flag para reinicio seguro
         with col2:
             if st.button("❌ Cancelar"):
                 st.session_state.confirmar_borrado = False
@@ -144,3 +144,8 @@ def generar_orden_carga_manual():
 
         st.markdown("### ✉️ Orden generada:")
         st.code(mensaje, language="markdown")
+
+    # Ejecutar reinicio si se activó
+    if st.session_state.get("reiniciar", False):
+        st.session_state.reiniciar = False
+        st.experimental_rerun()
