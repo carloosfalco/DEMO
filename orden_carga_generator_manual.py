@@ -26,7 +26,7 @@ def generar_orden_carga_manual():
         fecha_carga = st.date_input("📅 Fecha de carga", value=st.session_state.get("fecha_carga", date.today()), key="fecha_carga")
         ref_interna = st.text_input("🔐 Referencia interna", key="ref_interna")
 
-        incluir_todos_links = st.checkbox("🗺 Incluir enlaces de Google Maps para todas las ubicaciones", key="incluir_todos_links")
+        incluir_todos_links = st.checkbox("Incluir enlaces de Google Maps para todas las ubicaciones", key="incluir_todos_links")
 
         num_origenes = st.number_input("Número de ubicaciones de carga", min_value=1, max_value=5, value=st.session_state.get("num_origenes", 1), key="num_origenes")
         origenes = []
