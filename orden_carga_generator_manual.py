@@ -20,7 +20,6 @@ def generar_orden_carga_manual():
     st.title("📦 Generador de Orden de Carga")
     st.markdown("Completa los siguientes datos para generar una orden.")
 
-    # Interruptor de ida y vuelta
     ida_vuelta = st.toggle("↔️ Ida y vuelta", value=st.session_state.get("ida_vuelta", False))
     st.session_state.ida_vuelta = ida_vuelta
 
@@ -43,7 +42,6 @@ def generar_orden_carga_manual():
         destino_1_val = ""
 
         if ida_vuelta:
-            # Orden intercalado: Origen 1 → Destino 1 → Origen 2 → Destino 2
             for i in range(2):
                 # ORIGEN
                 st.markdown(f"#### 📍 Origen {i+1}")
@@ -103,49 +101,95 @@ def generar_orden_carga_manual():
         if ref_interna:
             mensaje += f"🔐 Ref. interna: {ref_interna}\n\n"
 
-        cargas = []
-        for i, (origen, hora, ref_carga, incluir_link) in enumerate(origenes):
-            if origen:
-                linea = f"  - Origen {i+1}: {origen}"
-                if hora:
-                    linea += f" ({hora}H)"
-                cargas.append(linea)
-                if ref_carga:
-                    ref_lines = ref_carga.splitlines()
-                    cargas.append(f"    ↪️ Ref. carga: {ref_lines[0]}")
-                    for line in ref_lines[1:]:
-                        cargas.append(f"                   {line}")
-                if incluir_link:
-                    enlace = generar_enlace_maps(origen)
-                    cargas.append(f"    🌐 {enlace}")
-        if cargas:
-            mensaje += f"📍 Cargas ({formatear_fecha_con_dia(fecha_carga)}):\n" + "\n".join(cargas) + "\n"
+        bloques = []
+        if ida_vuelta:
+            for i in range(2):
+                carga = origenes[i]
+                descarga = destinos[i]
+                bloque = []
 
-        descargas = []
-        for i, (destino, fecha_descarga, hora_descarga, ref_cliente, incluir_link) in enumerate(destinos):
-            if destino:
-                linea = f"  - Destino {i+1}: {destino}"
-                detalles = []
-                if fecha_descarga:
-                    detalles.append(formatear_fecha_con_dia(fecha_descarga))
-                if hora_descarga:
-                    detalles.append(hora_descarga)
-                if detalles:
-                    linea += f" ({', '.join(detalles)})"
-                descargas.append(linea)
-                if ref_cliente:
-                    ref_lines = ref_cliente.splitlines()
-                    descargas.append(f"    ↪️ Ref. cliente: {ref_lines[0]}")
-                    for line in ref_lines[1:]:
-                        descargas.append(f"                     {line}")
-                if incluir_link:
-                    enlace = generar_enlace_maps(destino)
-                    descargas.append(f"    🌐 {enlace}")
-        if descargas:
-            mensaje += "\n📍 Descargas:\n" + "\n".join(descargas) + "\n"
+                # CARGA
+                if carga[0]:
+                    bloque.append(f"📍 Carga {i+1} ({formatear_fecha_con_dia(fecha_carga)}):")
+                    linea = f"  - Origen {i+1}: {carga[0]}"
+                    if carga[1]:
+                        linea += f" ({carga[1]}H)"
+                    bloque.append(linea)
+                    if carga[2]:
+                        ref_lines = carga[2].splitlines()
+                        bloque.append(f"    ↪️ Ref. carga: {ref_lines[0]}")
+                        for line in ref_lines[1:]:
+                            bloque.append(f"                   {line}")
+                    if carga[3]:
+                        bloque.append(f"    🌐 {generar_enlace_maps(carga[0])}")
+
+                # DESCARGA
+                if descarga[0]:
+                    bloque.append(f"📍 Descarga {i+1} ({formatear_fecha_con_dia(descarga[1])}):")
+                    linea = f"  - Destino {i+1}: {descarga[0]}"
+                    detalles = []
+                    if descarga[1]:
+                        detalles.append(formatear_fecha_con_dia(descarga[1]))
+                    if descarga[2]:
+                        detalles.append(descarga[2])
+                    if detalles:
+                        linea += f" ({', '.join(detalles)})"
+                    bloque.append(linea)
+                    if descarga[3]:
+                        ref_lines = descarga[3].splitlines()
+                        bloque.append(f"    ↪️ Ref. cliente: {ref_lines[0]}")
+                        for line in ref_lines[1:]:
+                            bloque.append(f"                     {line}")
+                    if descarga[4]:
+                        bloque.append(f"    🌐 {generar_enlace_maps(descarga[0])}")
+
+                bloques.append("\n".join(bloque))
+        else:
+            cargas = []
+            for i, (origen, hora, ref_carga, incluir_link) in enumerate(origenes):
+                if origen:
+                    linea = f"  - Origen {i+1}: {origen}"
+                    if hora:
+                        linea += f" ({hora}H)"
+                    cargas.append(linea)
+                    if ref_carga:
+                        ref_lines = ref_carga.splitlines()
+                        cargas.append(f"    ↪️ Ref. carga: {ref_lines[0]}")
+                        for line in ref_lines[1:]:
+                            cargas.append(f"                   {line}")
+                    if incluir_link:
+                        enlace = generar_enlace_maps(origen)
+                        cargas.append(f"    🌐 {enlace}")
+            if cargas:
+                bloques.append(f"📍 Cargas ({formatear_fecha_con_dia(fecha_carga)}):\n" + "\n".join(cargas))
+
+            descargas = []
+            for i, (destino, fecha_descarga, hora_descarga, ref_cliente, incluir_link) in enumerate(destinos):
+                if destino:
+                    linea = f"  - Destino {i+1}: {destino}"
+                    detalles = []
+                    if fecha_descarga:
+                        detalles.append(formatear_fecha_con_dia(fecha_descarga))
+                    if hora_descarga:
+                        detalles.append(hora_descarga)
+                    if detalles:
+                        linea += f" ({', '.join(detalles)})"
+                    descargas.append(linea)
+                    if ref_cliente:
+                        ref_lines = ref_cliente.splitlines()
+                        descargas.append(f"    ↪️ Ref. cliente: {ref_lines[0]}")
+                        for line in ref_lines[1:]:
+                            descargas.append(f"                     {line}")
+                    if incluir_link:
+                        enlace = generar_enlace_maps(destino)
+                        descargas.append(f"    🌐 {enlace}")
+            if descargas:
+                bloques.append("📍 Descargas:\n" + "\n".join(descargas))
+
+        mensaje += "\n\n".join(bloques)
 
         if tipo_mercancia:
-            mensaje += f"\n📦 Tipo de mercancía: {tipo_mercancia}"
+            mensaje += f"\n\n📦 Tipo de mercancía: {tipo_mercancia}"
 
         if observaciones:
             mensaje += f"\n\n📌 {observaciones}"
