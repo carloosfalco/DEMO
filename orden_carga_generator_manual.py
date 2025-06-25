@@ -21,17 +21,6 @@ def generar_orden_carga_manual():
     st.title("📦 Generador de Orden de Carga")
     st.markdown("Completa los siguientes datos para generar una orden.")
 
-    # Inicializar valores por defecto
-    if "num_origenes" not in st.session_state:
-        st.session_state.num_origenes = 1
-    if "num_destinos" not in st.session_state:
-        st.session_state.num_destinos = 1
-
-    # Botón "Ida y vuelta"
-    if st.button("↔️ Ida y vuelta"):
-        st.session_state.num_origenes = 2
-        st.session_state.num_destinos = 2
-
     with st.form("orden_form"):
         chofer = st.text_input("Nombre del chofer", key="chofer")
         fecha_carga = st.date_input("Fecha de carga", value=st.session_state.get("fecha_carga", date.today()), key="fecha_carga")
@@ -39,8 +28,7 @@ def generar_orden_carga_manual():
 
         incluir_todos_links = st.checkbox("🗸 Incluir enlaces de Google Maps para todas las ubicaciones", key="incluir_todos_links")
 
-        num_origenes = st.number_input("Número de ubicaciones de carga", min_value=1, max_value=5,
-                                       value=st.session_state.num_origenes, key="num_origenes")
+        num_origenes = st.number_input("Número de ubicaciones de carga", min_value=1, max_value=5, value=st.session_state.get("num_origenes", 1), key="num_origenes")
         origenes = []
         for i in range(num_origenes):
             st.markdown(f"#### 📍 Origen {i+1}")
@@ -51,8 +39,7 @@ def generar_orden_carga_manual():
             incluir_link = incluir_todos_links or _incluir_link
             origenes.append((origen.strip(), hora_carga.strip(), ref_carga.strip(), incluir_link))
 
-        num_destinos = st.number_input("Número de ubicaciones de descarga", min_value=1, max_value=5,
-                                       value=st.session_state.num_destinos, key="num_destinos")
+        num_destinos = st.number_input("Número de ubicaciones de descarga", min_value=1, max_value=5, value=st.session_state.get("num_destinos", 1), key="num_destinos")
         destinos = []
         for i in range(num_destinos):
             st.markdown(f"#### 📍 Destino {i+1}")
