@@ -18,19 +18,6 @@ def generar_enlace_maps(ubicacion):
     return f"https://www.google.com/maps/search/?api=1&query={query}"
 
 def generar_orden_carga_manual():
-    # Reinicio de campos si viene del botón de "nueva_orden"
-    query_params = st.query_params
-    if query_params.get("nueva_orden") == "1":
-        # Borrar todas las claves de session_state relacionadas con el formulario
-        for key in list(st.session_state.keys()):
-            if key.startswith(("chofer", "fecha_carga", "ref_interna", "tipo_mercancia", "observaciones",
-                               "origen_", "hora_carga_", "ref_carga_", "link_origen_",
-                               "destino_", "fecha_descarga_", "hora_descarga_", "ref_cliente_", "link_destino_",
-                               "num_origenes", "num_destinos", "incluir_todos_links")):
-                del st.session_state[key]
-        st.query_params.clear()
-        st.rerun()
-
     st.title("📦 Generador de Orden de Carga")
     st.markdown("Completa los siguientes datos para generar una orden.")
 
