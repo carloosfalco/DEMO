@@ -26,7 +26,7 @@ def generar_orden_carga_manual():
         fecha_carga = st.date_input("📅 Fecha de carga", value=st.session_state.get("fecha_carga", date.today()), key="fecha_carga")
         ref_interna = st.text_input("🔐 Referencia interna", key="ref_interna")
 
-        incluir_todos_links = st.checkbox("Incluir enlaces de Google Maps para todas las ubicaciones", key="incluir_todos_links")
+        incluir_todos_links = st.checkbox("🗺 Incluir enlaces de Google Maps para todas las ubicaciones", key="incluir_todos_links")
 
         num_origenes = st.number_input("Número de ubicaciones de carga", min_value=1, max_value=5, value=st.session_state.get("num_origenes", 1), key="num_origenes")
         origenes = []
@@ -68,7 +68,7 @@ def generar_orden_carga_manual():
             if origen:
                 linea = f"  - Origen {i+1}: {origen}"
                 if hora:
-                    linea += f" ({hora}h)"
+                    linea += f" ({hora}H)"
                 cargas.append(linea)
                 if ref_carga:
                     ref_lines = ref_carga.splitlines()
@@ -113,3 +113,15 @@ def generar_orden_carga_manual():
         mensaje += "\n\nPor favor, avisa de inmediato si surge algún problema o hay riesgo de retraso."
         st.markdown("### ✉️ Orden generada:")
         st.code(mensaje.strip(), language="markdown")
+
+        st.markdown("### ✨ ¿Nueva orden?")
+        if st.button("🧹 Nueva orden"):
+            for key in list(st.session_state.keys()):
+                if key.startswith((
+                    "chofer", "fecha_carga", "ref_interna", "tipo_mercancia", "observaciones",
+                    "origen_", "hora_carga_", "ref_carga_", "link_origen_",
+                    "destino_", "fecha_descarga_", "hora_descarga_", "ref_cliente_", "link_destino_",
+                    "num_origenes", "num_destinos", "incluir_todos_links"
+                )):
+                    del st.session_state[key]
+            st.experimental_rerun()
