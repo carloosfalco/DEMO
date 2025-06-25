@@ -128,8 +128,6 @@ def generar_orden_carga_manual():
                     bloque.append(f"📍 Descarga {i+1} ({formatear_fecha_con_dia(descarga[1])}):")
                     linea = f"  - Destino {i+1}: {descarga[0]}"
                     detalles = []
-                    if descarga[1]:
-                        detalles.append(formatear_fecha_con_dia(descarga[1]))
                     if descarga[2]:
                         detalles.append(descarga[2])
                     if detalles:
