@@ -128,7 +128,7 @@ def generar_orden_carga_manual():
         st.markdown("### ✉️ Orden generada:")
         st.code(mensaje.strip(), language="markdown")
 
-        st.markdown("### ✨ ¿Nueva orden?")
+       
         if st.button("🧹 Nueva orden"):
             st.session_state["reiniciar"] = True
             st.experimental_rerun()
