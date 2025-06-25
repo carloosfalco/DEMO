@@ -22,7 +22,7 @@ def generar_enlace_maps(ubicacion):
     query = urllib.parse.quote_plus(ubicacion)
     return f"https://www.google.com/maps/search/?api=1&query={query}"
 
-def planificador_rutas():
+def generar_orden_carga_manual():
     st.title("📦 Generador de Orden de Carga")
     st.markdown("Completa los siguientes datos para generar una orden.")
 
