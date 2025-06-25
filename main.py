@@ -7,16 +7,21 @@ def main():
 
     st.sidebar.title("📂 Menú")
 
+    # Si se ha pulsado "Nueva orden de carga", limpiar y redirigir
     if st.sidebar.button("🧹 Nueva orden de carga"):
+        st.query_params.clear()
         st.query_params["nueva_orden"] = "1"
         st.query_params["seleccion"] = "Orden de carga"
         st.rerun()
 
-    seleccion = st.sidebar.radio("Selecciona una opción", [
-        "Planificador de rutas",
-        "Orden de carga"
-    ], index=1 if st.query_params.get("seleccion") == "Orden de carga" else 0)
+    # Selección de menú
+    seleccion = st.sidebar.radio(
+        "Selecciona una opción",
+        ["Planificador de rutas", "Orden de carga"],
+        index=1 if st.query_params.get("seleccion") == "Orden de carga" else 0
+    )
 
+    # Ejecutar la sección correspondiente
     if seleccion == "Planificador de rutas":
         planificador_rutas()
     elif seleccion == "Orden de carga":
