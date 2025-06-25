@@ -128,7 +128,7 @@ def generar_orden_carga_manual():
                     linea = f"  - {destinos[i][0]}"
                     detalles = []
                     if destinos[i][2]:
-                        detalles.append(destinos[i][2])
+                        detalles.append(f"{destinos[i][2]}h")
                     if detalles:
                         linea += f" ({', '.join(detalles)})"
                     bloque.append(linea)
@@ -167,7 +167,7 @@ def generar_orden_carga_manual():
                     if fecha_descarga:
                         detalles.append(formatear_fecha_con_dia(fecha_descarga))
                     if hora_descarga:
-                        detalles.append(hora_descarga)
+                        detalles.append(f"{hora_descarga}h")
                     if detalles:
                         linea += f" ({', '.join(detalles)})"
                     descargas.append(linea)
