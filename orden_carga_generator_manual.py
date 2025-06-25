@@ -23,11 +23,11 @@ def generar_orden_carga_manual():
 
     # Botón para limpiar campos
     if st.button("🧹 Nueva orden"):
-        for key in list(st.session_state.keys()):
-            if not key.startswith("_"):
-                del st.session_state[key]
-        st.experimental_set_query_params()
-        st.experimental_rerun()
+        limpiar_keys = [k for k in st.session_state.keys() if not k.startswith("_")]
+        for k in limpiar_keys:
+            del st.session_state[k]
+        st.query_params.clear()
+        st.rerun()
 
     with st.form("orden_form"):
         chofer = st.text_input("Nombre del chofer", key="chofer")
