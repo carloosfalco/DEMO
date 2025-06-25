@@ -192,3 +192,8 @@ def generar_orden_carga_manual():
         mensaje += "\n\nPor favor, avisa de inmediato si surge algún problema o hay riesgo de retraso."
         st.markdown("### ✉️ Orden generada:")
         st.code(mensaje.strip(), language="markdown")
+
+        # Botón de limpieza debajo del mensaje
+        if st.button("🧹 Limpiar formulario"):
+            st.session_state.clear()
+            st.experimental_rerun()
