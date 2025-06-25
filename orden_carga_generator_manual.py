@@ -21,10 +21,6 @@ def generar_orden_carga_manual():
     st.title("📦 Generador de Orden de Carga")
     st.markdown("Completa los siguientes datos para generar una orden.")
 
-    if st.button("🧹 Nueva orden"):
-        st.session_state.clear()
-        st.experimental_rerun()
-
     with st.form("orden_form"):
         chofer = st.text_input("Nombre del chofer", key="chofer")
         fecha_carga = st.date_input("📅 Fecha de carga", value=st.session_state.get("fecha_carga", date.today()), key="fecha_carga")
