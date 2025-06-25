@@ -21,21 +21,17 @@ def generar_orden_carga_manual():
     st.title("📦 Generador de Orden de Carga")
     st.markdown("Completa los siguientes datos para generar una orden.")
 
-    if "reset_form" not in st.session_state:
-        st.session_state.reset_form = False
-
-    if st.session_state.reset_form:
-        st.session_state.clear()
+    if st.button("🧹 Nueva orden"):
         st.experimental_rerun()
 
     with st.form("orden_form"):
-        chofer = st.text_input("Nombre del chofer", key="chofer")
-        fecha_carga = st.date_input("🗕 Fecha de carga", value=date.today(), key="fecha_carga")
-        ref_interna = st.text_input("🔐 Referencia interna", key="ref_interna")
+        chofer = st.text_input("Nombre del chofer")
+        fecha_carga = st.date_input("🗕 Fecha de carga", value=date.today())
+        ref_interna = st.text_input("🔐 Referencia interna")
 
-        incluir_todos_links = st.checkbox("🗘 Incluir enlaces de Google Maps para todas las ubicaciones", key="incluir_todos_links")
+        incluir_todos_links = st.checkbox("🗸 Incluir enlaces de Google Maps para todas las ubicaciones")
 
-        num_origenes = st.number_input("Número de ubicaciones de carga", min_value=1, max_value=5, value=1, key="num_origenes")
+        num_origenes = st.number_input("Número de ubicaciones de carga", min_value=1, max_value=5, value=1)
         origenes = []
         for i in range(num_origenes):
             st.markdown(f"#### 📍 Origen {i+1}")
@@ -46,7 +42,7 @@ def generar_orden_carga_manual():
             incluir_link = incluir_todos_links or _incluir_link
             origenes.append((origen.strip(), hora_carga.strip(), ref_carga.strip(), incluir_link))
 
-        num_destinos = st.number_input("Número de ubicaciones de descarga", min_value=1, max_value=5, value=1, key="num_destinos")
+        num_destinos = st.number_input("Número de ubicaciones de descarga", min_value=1, max_value=5, value=1)
         destinos = []
         for i in range(num_destinos):
             st.markdown(f"#### 📍 Destino {i+1}")
@@ -58,8 +54,8 @@ def generar_orden_carga_manual():
             incluir_link = incluir_todos_links or _incluir_link
             destinos.append((destino.strip(), fecha_descarga, hora_descarga.strip(), ref_cliente.strip(), incluir_link))
 
-        tipo_mercancia = st.text_input("📦 Tipo de mercancía (opcional)", key="tipo_mercancia").strip()
-        observaciones = st.text_area("📜 Observaciones (opcional)", key="observaciones").strip()
+        tipo_mercancia = st.text_input("📦 Tipo de mercancía (opcional)").strip()
+        observaciones = st.text_area("📜 Observaciones (opcional)").strip()
 
         submitted = st.form_submit_button("Generar orden")
 
@@ -120,7 +116,3 @@ def generar_orden_carga_manual():
         mensaje += "\n\nPor favor, avisa de inmediato si surge algún problema o hay riesgo de retraso."
         st.markdown("### ✉️ Orden generada:")
         st.code(mensaje.strip(), language="markdown")
-
-        if st.button("🧹 Nueva orden"):
-            st.session_state.reset_form = True
-            st.experimental_rerun()
