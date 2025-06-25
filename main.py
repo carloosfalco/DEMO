@@ -6,16 +6,16 @@ def main():
     st.set_page_config(page_title="Virosque TMS", page_icon="🚛", layout="wide")
 
     st.sidebar.title("📂 Menú")
-    st.sidebar.markdown("### Opciones")
-    nueva = st.sidebar.button("🧹 Nueva orden de carga")
-    if nueva:
+
+    if st.sidebar.button("🧹 Nueva orden de carga"):
         st.query_params["nueva_orden"] = "1"
+        st.query_params["seleccion"] = "Orden de carga"
         st.rerun()
 
     seleccion = st.sidebar.radio("Selecciona una opción", [
         "Planificador de rutas",
         "Orden de carga"
-    ])
+    ], index=1 if st.query_params.get("seleccion") == "Orden de carga" else 0)
 
     if seleccion == "Planificador de rutas":
         planificador_rutas()
