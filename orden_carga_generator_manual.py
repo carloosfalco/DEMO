@@ -31,18 +31,20 @@ def generar_orden_carga_manual():
         fecha_carga = st.date_input("📅 Fecha de carga", value=date.today())
         ref_interna = st.text_input("🔐 Referencia interna")
 
+        incluir_todos_links = st.checkbox("🗺 Incluir enlaces de Google Maps para todas las ubicaciones")
 
-        num_origenes = st.number_input("Número de ubicaciones de carga", min_value=1, max_value=10, value=1)
+        num_origenes = st.number_input("Número de ubicaciones de carga", min_value=1, max_value=5, value=1)
         origenes = []
         for i in range(num_origenes):
             st.markdown(f"#### 📍 Origen {i+1}")
             origen = st.text_input(f"Dirección Origen {i+1}", key=f"origen_{i}")
             hora_carga = st.text_input(f"🕒 Hora de carga Origen {i+1}", key=f"hora_carga_{i}")
             ref_carga = st.text_area(f"🔖 Ref. de carga Origen {i+1}", key=f"ref_carga_{i}")
-            incluir_link = st.checkbox("Incluir enlace Maps", value=incluir_todos_links, key=f"link_origen_{i}")
+            _incluir_link = st.checkbox("Incluir enlace Maps", value=incluir_todos_links, key=f"link_origen_{i}")
+            incluir_link = True if incluir_todos_links else _incluir_link
             origenes.append((origen.strip(), hora_carga.strip(), ref_carga.strip(), incluir_link))
 
-        num_destinos = st.number_input("Número de ubicaciones de descarga", min_value=1, max_value=10, value=1)
+        num_destinos = st.number_input("Número de ubicaciones de descarga", min_value=1, max_value=5, value=1)
         destinos = []
         for i in range(num_destinos):
             st.markdown(f"#### 🎯 Destino {i+1}")
@@ -50,7 +52,8 @@ def generar_orden_carga_manual():
             fecha_descarga = st.date_input(f"📅 Fecha de descarga Destino {i+1}", value=date.today(), key=f"fecha_descarga_{i}")
             hora_descarga = st.text_input(f"🕓 Hora de descarga Destino {i+1}", key=f"hora_descarga_{i}")
             ref_cliente = st.text_area(f"📌 Referencia cliente Destino {i+1}", key=f"ref_cliente_{i}")
-            incluir_link = st.checkbox("Incluir enlace Maps", value=incluir_todos_links, key=f"link_destino_{i}")
+            _incluir_link = st.checkbox("Incluir enlace Maps", value=incluir_todos_links, key=f"link_destino_{i}")
+            incluir_link = True if incluir_todos_links else _incluir_link
             destinos.append((destino.strip(), fecha_descarga, hora_descarga.strip(), ref_cliente.strip(), incluir_link))
 
         tipo_mercancia = st.text_input("📦 Tipo de mercancía (opcional)").strip()
