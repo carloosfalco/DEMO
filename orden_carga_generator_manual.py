@@ -22,7 +22,7 @@ def generar_orden_carga_manual():
         for k in list(st.session_state.keys()):
             if not k.startswith("_"):
                 del st.session_state[k]
-        st.session_state["limpiar"] = False
+        st.session_state.clear()
         st.rerun()
 
     st.title("📦 Generador de Orden de Carga")
@@ -31,6 +31,7 @@ def generar_orden_carga_manual():
     # Botón para limpiar campos
     if st.button("🧹 Nueva orden"):
         st.session_state["limpiar"] = True
+        st.rerun()
 
     with st.form("orden_form"):
         chofer = st.text_input("Nombre del chofer", key="chofer")
