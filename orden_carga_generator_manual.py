@@ -21,6 +21,12 @@ def generar_orden_carga_manual():
     st.title("📦 Generador de Orden de Carga")
     st.markdown("Completa los siguientes datos para generar una orden.")
 
+    # Inicializar valores en session_state
+    if "num_origenes" not in st.session_state:
+        st.session_state.num_origenes = 1
+    if "num_destinos" not in st.session_state:
+        st.session_state.num_destinos = 1
+
     with st.form("orden_form"):
         chofer = st.text_input("Nombre del chofer", key="chofer")
         fecha_carga = st.date_input("🗕 Fecha de carga", value=st.session_state.get("fecha_carga", date.today()), key="fecha_carga")
@@ -28,9 +34,9 @@ def generar_orden_carga_manual():
 
         incluir_todos_links = st.checkbox("🗸 Incluir enlaces de Google Maps para todas las ubicaciones", key="incluir_todos_links")
 
-        num_origenes = st.number_input("Número de ubicaciones de carga", min_value=1, max_value=5, value=st.session_state.get("num_origenes", 1), key="num_origenes")
+        # CARGAS
         origenes = []
-        for i in range(num_origenes):
+        for i in range(st.session_state.num_origenes):
             st.markdown(f"#### 📍 Origen {i+1}")
             origen = st.text_input(f"Dirección Origen {i+1}", key=f"origen_{i}")
             hora_carga = st.text_input(f"🕒 Hora de carga Origen {i+1}", key=f"hora_carga_{i}")
@@ -39,9 +45,9 @@ def generar_orden_carga_manual():
             incluir_link = incluir_todos_links or _incluir_link
             origenes.append((origen.strip(), hora_carga.strip(), ref_carga.strip(), incluir_link))
 
-        num_destinos = st.number_input("Número de ubicaciones de descarga", min_value=1, max_value=5, value=st.session_state.get("num_destinos", 1), key="num_destinos")
+        # DESTINOS
         destinos = []
-        for i in range(num_destinos):
+        for i in range(st.session_state.num_destinos):
             st.markdown(f"#### 📍 Destino {i+1}")
             destino = st.text_input(f"Dirección Destino {i+1}", key=f"destino_{i}")
             fecha_descarga_default = fecha_carga + timedelta(days=1)
@@ -56,6 +62,12 @@ def generar_orden_carga_manual():
             incluir_link = incluir_todos_links or _incluir_link
             destinos.append((destino.strip(), fecha_descarga, hora_descarga.strip(), ref_cliente.strip(), incluir_link))
 
+        # BOTÓN para añadir otra carga
+        if st.form_submit_button("➕ Añadir otra carga"):
+            st.session_state.num_origenes += 1
+            st.experimental_rerun()
+
+        # CAMPOS FINALES
         tipo_mercancia = st.text_input("📦 Tipo de mercancía (opcional)", key="tipo_mercancia").strip()
         observaciones = st.text_area("📜 Observaciones (opcional)", key="observaciones").strip()
 
