@@ -23,10 +23,10 @@ def generar_orden_carga_manual():
 
     with st.form("orden_form"):
         chofer = st.text_input("Nombre del chofer", key="chofer")
-        fecha_carga = st.date_input("🗕 Fecha de carga", value=st.session_state.get("fecha_carga", date.today()), key="fecha_carga")
+        fecha_carga = st.date_input("📅 Fecha de carga", value=st.session_state.get("fecha_carga", date.today()), key="fecha_carga")
         ref_interna = st.text_input("🔐 Referencia interna", key="ref_interna")
 
-        incluir_todos_links = st.checkbox("🗘 Incluir enlaces de Google Maps para todas las ubicaciones", key="incluir_todos_links")
+        incluir_todos_links = st.checkbox("🗺 Incluir enlaces de Google Maps para todas las ubicaciones", key="incluir_todos_links")
 
         num_origenes = st.number_input("Número de ubicaciones de carga", min_value=1, max_value=5, value=st.session_state.get("num_origenes", 1), key="num_origenes")
         origenes = []
@@ -44,7 +44,7 @@ def generar_orden_carga_manual():
         for i in range(num_destinos):
             st.markdown(f"#### 📍 Destino {i+1}")
             destino = st.text_input(f"Dirección Destino {i+1}", key=f"destino_{i}")
-            fecha_descarga = st.date_input(f"🗕 Fecha de descarga Destino {i+1}", value=st.session_state.get(f"fecha_descarga_{i}", date.today()), key=f"fecha_descarga_{i}")
+            fecha_descarga = st.date_input(f"📅 Fecha de descarga Destino {i+1}", value=st.session_state.get(f"fecha_descarga_{i}", date.today()), key=f"fecha_descarga_{i}")
             hora_descarga = st.text_input(f"🕓 Hora de descarga Destino {i+1}", key=f"hora_descarga_{i}")
             ref_cliente = st.text_area(f"📌 Referencia cliente Destino {i+1}", key=f"ref_cliente_{i}")
             _incluir_link = st.checkbox("Incluir enlace Maps", value=incluir_todos_links, key=f"link_destino_{i}")
@@ -52,25 +52,25 @@ def generar_orden_carga_manual():
             destinos.append((destino.strip(), fecha_descarga, hora_descarga.strip(), ref_cliente.strip(), incluir_link))
 
         tipo_mercancia = st.text_input("📦 Tipo de mercancía (opcional)", key="tipo_mercancia").strip()
-        observaciones = st.text_area("📜 Observaciones (opcional)", key="observaciones").strip()
+        observaciones = st.text_area("📝 Observaciones (opcional)", key="observaciones").strip()
 
         col1, col2 = st.columns([4, 1])
         with col1:
             submitted = st.form_submit_button("Generar orden")
         with col2:
-            borrar = st.form_submit_button("Borrar todo")
-
-    if borrar:
-        for key in list(st.session_state.keys()):
-            if any(key.startswith(prefix) for prefix in [
-                "chofer", "fecha_carga", "ref_interna", "tipo_mercancia", "observaciones",
-                "origen_", "hora_carga_", "ref_carga_", "link_origen_",
-                "destino_", "fecha_descarga_", "hora_descarga_", "ref_cliente_", "link_destino_"
-            ]):
-                if isinstance(st.session_state[key], (str, int)):
-                    st.session_state[key] = "" if isinstance(st.session_state[key], str) else 1
-                else:
-                    st.session_state[key] = None
+            if st.form_submit_button("🧹 Nueva orden"):
+                for key in list(st.session_state.keys()):
+                    if any(key.startswith(prefix) for prefix in [
+                        "chofer", "fecha_carga", "ref_interna", "tipo_mercancia", "observaciones",
+                        "origen_", "hora_carga_", "ref_carga_", "link_origen_",
+                        "destino_", "fecha_descarga_", "hora_descarga_", "ref_cliente_", "link_destino_"
+                    ]):
+                        if isinstance(st.session_state[key], (str, int)):
+                            st.session_state[key] = "" if isinstance(st.session_state[key], str) else 1
+                        else:
+                            st.session_state[key] = None
+                st.session_state["num_origenes"] = 1
+                st.session_state["num_destinos"] = 1
 
     if submitted:
         mensaje = f"Hola {chofer}," if chofer else "Hola,"
