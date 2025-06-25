@@ -31,7 +31,7 @@ def generar_orden_carga_manual():
         fecha_carga = st.date_input("📅 Fecha de carga", value=date.today())
         ref_interna = st.text_input("🔐 Referencia interna")
 
-        incluir_todos_links = st.checkbox("Incluir enlaces de Google Maps para todas las ubicaciones")
+        incluir_todos_links = st.checkbox("🗺 Incluir enlaces de Google Maps para todas las ubicaciones")
 
         num_origenes = st.number_input("Número de ubicaciones de carga", min_value=1, max_value=5, value=1)
         origenes = []
@@ -47,7 +47,7 @@ def generar_orden_carga_manual():
         num_destinos = st.number_input("Número de ubicaciones de descarga", min_value=1, max_value=5, value=1)
         destinos = []
         for i in range(num_destinos):
-            st.markdown(f"#### 📍 Destino {i+1}")
+            st.markdown(f"#### 🎯 Destino {i+1}")
             destino = st.text_input(f"Dirección Destino {i+1}", key=f"destino_{i}")
             fecha_descarga = st.date_input(f"📅 Fecha de descarga Destino {i+1}", value=date.today(), key=f"fecha_descarga_{i}")
             hora_descarga = st.text_input(f"🕓 Hora de descarga Destino {i+1}", key=f"hora_descarga_{i}")
@@ -59,7 +59,31 @@ def generar_orden_carga_manual():
         tipo_mercancia = st.text_input("📦 Tipo de mercancía (opcional)").strip()
         observaciones = st.text_area("📝 Observaciones (opcional)").strip()
 
-        submitted = st.form_submit_button("Generar orden")
+        # Botones en la misma fila
+        col1, col2 = st.columns([4, 1])
+        with col1:
+            submitted = st.form_submit_button("✅ Generar orden")
+        with col2:
+            borrar = st.form_submit_button("🗑️ Borrar todo")
+
+    if borrar:
+        st.session_state.confirmar_borrado = True
+
+    if st.session_state.get("confirmar_borrado", False):
+        st.warning("¿Estás seguro de que quieres borrar todos los campos?")
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("✅ Sí, borrar"):
+                for key in list(st.session_state.keys()):
+                    if key.startswith(("origen_", "hora_carga_", "ref_carga_", "link_origen_",
+                                       "destino_", "fecha_descarga_", "hora_descarga_", "ref_cliente_", "link_destino_",
+                                       "orden_form", "Nombre del chofer", "📦", "📝", "🔐", "incluir_todos_links")):
+                        del st.session_state[key]
+                st.session_state.confirmar_borrado = False
+                st.experimental_rerun()
+        with col2:
+            if st.button("❌ Cancelar"):
+                st.session_state.confirmar_borrado = False
 
     if submitted:
         mensaje = f"Hola {chofer}," if chofer else "Hola,"
@@ -107,7 +131,7 @@ def generar_orden_carga_manual():
                     enlace = generar_enlace_maps(destino)
                     descargas.append(f"    🌐 {enlace}")
         if descargas:
-            mensaje += "\n📍 Descargas:\n" + "\n".join(descargas) + "\n"
+            mensaje += "\n🎯 Descargas:\n" + "\n".join(descargas) + "\n"
 
         if tipo_mercancia:
             mensaje += f"\n📦 Tipo de mercancía: {tipo_mercancia}"
