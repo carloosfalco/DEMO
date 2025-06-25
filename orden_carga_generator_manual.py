@@ -21,11 +21,22 @@ def generar_orden_carga_manual():
     st.title("📦 Generador de Orden de Carga")
     st.markdown("Completa los siguientes datos para generar una orden.")
 
-    # Inicializar session_state si es necesario
+    # Inicializar valores en session_state
     if "num_origenes" not in st.session_state:
         st.session_state.num_origenes = 1
     if "num_destinos" not in st.session_state:
         st.session_state.num_destinos = 1
+
+    # Botones para añadir o eliminar cargas, antes del formulario
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        if st.button("➕ Añadir otra carga"):
+            st.session_state.num_origenes += 1
+            st.experimental_rerun()
+    with col2:
+        if st.session_state.num_origenes > 1 and st.button("➖ Eliminar última carga"):
+            st.session_state.num_origenes -= 1
+            st.experimental_rerun()
 
     with st.form("orden_form"):
         chofer = st.text_input("Nombre del chofer", key="chofer")
@@ -66,11 +77,6 @@ def generar_orden_carga_manual():
         observaciones = st.text_area("📜 Observaciones (opcional)", key="observaciones").strip()
 
         submitted = st.form_submit_button("Generar orden")
-
-    # 🔘 Botón fuera del formulario para añadir otra carga
-    if st.button("➕ Añadir otra carga"):
-        st.session_state.num_origenes += 1
-        st.experimental_rerun()
 
     if submitted:
         mensaje = f"Hola {chofer}," if chofer else "Hola,"
