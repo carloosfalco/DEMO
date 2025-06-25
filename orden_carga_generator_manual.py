@@ -18,16 +18,19 @@ def generar_enlace_maps(ubicacion):
     return f"https://www.google.com/maps/search/?api=1&query={query}"
 
 def generar_orden_carga_manual():
+    if st.session_state.get("limpiar", False):
+        for k in list(st.session_state.keys()):
+            if not k.startswith("_"):
+                del st.session_state[k]
+        st.session_state["limpiar"] = False
+        st.rerun()
+
     st.title("📦 Generador de Orden de Carga")
     st.markdown("Completa los siguientes datos para generar una orden.")
 
     # Botón para limpiar campos
     if st.button("🧹 Nueva orden"):
-        limpiar_keys = [k for k in st.session_state.keys() if not k.startswith("_")]
-        for k in limpiar_keys:
-            del st.session_state[k]
-        st.query_params.clear()
-        st.rerun()
+        st.session_state["limpiar"] = True
 
     with st.form("orden_form"):
         chofer = st.text_input("Nombre del chofer", key="chofer")
