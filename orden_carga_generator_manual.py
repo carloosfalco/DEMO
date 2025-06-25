@@ -21,6 +21,9 @@ def generar_orden_carga_manual():
     st.title("📦 Generador de Orden de Carga")
     st.markdown("Completa los siguientes datos para generar una orden.")
 
+    if st.button("🧹 Nueva orden"):
+        st.experimental_rerun()
+
     with st.form("orden_form"):
         chofer = st.text_input("Nombre del chofer", key="chofer")
         fecha_carga = st.date_input("📅 Fecha de carga", value=st.session_state.get("fecha_carga", date.today()), key="fecha_carga")
@@ -54,23 +57,7 @@ def generar_orden_carga_manual():
         tipo_mercancia = st.text_input("📦 Tipo de mercancía (opcional)", key="tipo_mercancia").strip()
         observaciones = st.text_area("📝 Observaciones (opcional)", key="observaciones").strip()
 
-        col1, col2 = st.columns([4, 1])
-        with col1:
-            submitted = st.form_submit_button("Generar orden")
-        with col2:
-            if st.form_submit_button("🧹 Nueva orden"):
-                for key in list(st.session_state.keys()):
-                    if any(key.startswith(prefix) for prefix in [
-                        "chofer", "fecha_carga", "ref_interna", "tipo_mercancia", "observaciones",
-                        "origen_", "hora_carga_", "ref_carga_", "link_origen_",
-                        "destino_", "fecha_descarga_", "hora_descarga_", "ref_cliente_", "link_destino_"
-                    ]):
-                        if isinstance(st.session_state[key], (str, int)):
-                            st.session_state[key] = "" if isinstance(st.session_state[key], str) else 1
-                        else:
-                            st.session_state[key] = None
-                st.session_state["num_origenes"] = 1
-                st.session_state["num_destinos"] = 1
+        submitted = st.form_submit_button("Generar orden")
 
     if submitted:
         mensaje = f"Hola {chofer}," if chofer else "Hola,"
