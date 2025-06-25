@@ -23,7 +23,7 @@ def generar_orden_carga_manual():
 
     with st.form("orden_form"):
         chofer = st.text_input("Nombre del chofer", key="chofer")
-        fecha_carga = st.date_input("🗕 Fecha de carga", value=st.session_state.get("fecha_carga", date.today()), key="fecha_carga")
+        fecha_carga = st.date_input("Fecha de carga", value=st.session_state.get("fecha_carga", date.today()), key="fecha_carga")
         ref_interna = st.text_input("🔐 Referencia interna", key="ref_interna")
 
         incluir_todos_links = st.checkbox("🗸 Incluir enlaces de Google Maps para todas las ubicaciones", key="incluir_todos_links")
@@ -46,7 +46,7 @@ def generar_orden_carga_manual():
             destino = st.text_input(f"Dirección Destino {i+1}", key=f"destino_{i}")
             fecha_descarga_default = fecha_carga + timedelta(days=1)
             fecha_descarga = st.date_input(
-                f"🗕 Fecha de descarga Destino {i+1}",
+                f"Fecha de descarga Destino {i+1}",
                 value=st.session_state.get(f"fecha_descarga_{i}", fecha_descarga_default),
                 key=f"fecha_descarga_{i}"
             )
