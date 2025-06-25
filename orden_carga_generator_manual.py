@@ -116,7 +116,7 @@ def generar_orden_carga_manual():
                     bloque.append(linea)
                     if origenes[i][2]:
                         ref_lines = origenes[i][2].splitlines()
-                        bloque.append(f"    ↪️ Ref. carga: {ref_lines[0]}")
+                        bloque.append(f"    Ref. carga: {ref_lines[0]}")
                         for line in ref_lines[1:]:
                             bloque.append(f"                   {line}")
                     if origenes[i][3]:
@@ -134,7 +134,7 @@ def generar_orden_carga_manual():
                     bloque.append(linea)
                     if destinos[i][3]:
                         ref_lines = destinos[i][3].splitlines()
-                        bloque.append(f"    ↪️ Ref. cliente: {ref_lines[0]}")
+                        bloque.append(f"    Ref. cliente: {ref_lines[0]}")
                         for line in ref_lines[1:]:
                             bloque.append(f"                     {line}")
                     if destinos[i][4]:
@@ -151,7 +151,7 @@ def generar_orden_carga_manual():
                     cargas.append(linea)
                     if ref_carga:
                         ref_lines = ref_carga.splitlines()
-                        cargas.append(f"    ↪️ Ref. carga: {ref_lines[0]}")
+                        cargas.append(f"    Ref. carga: {ref_lines[0]}")
                         for line in ref_lines[1:]:
                             cargas.append(f"                   {line}")
                     if incluir_link:
@@ -173,7 +173,7 @@ def generar_orden_carga_manual():
                     descargas.append(linea)
                     if ref_cliente:
                         ref_lines = ref_cliente.splitlines()
-                        descargas.append(f"    ↪️ Ref. cliente: {ref_lines[0]}")
+                        descargas.append(f"    Ref. cliente: {ref_lines[0]}")
                         for line in ref_lines[1:]:
                             descargas.append(f"                     {line}")
                     if incluir_link:
@@ -193,7 +193,4 @@ def generar_orden_carga_manual():
         st.markdown("### ✉️ Orden generada:")
         st.code(mensaje.strip(), language="markdown")
 
-        # Botón de limpieza debajo del mensaje
-        if st.button("🪟 Limpiar formulario"):
-            st.session_state.clear()
-            st.experimental_rerun()
+
