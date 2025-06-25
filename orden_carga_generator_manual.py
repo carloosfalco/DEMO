@@ -18,8 +18,11 @@ def generar_enlace_maps(ubicacion):
     return f"https://www.google.com/maps/search/?api=1&query={query}"
 
 def generar_orden_carga_manual():
-    if st.session_state.get("nueva_orden"):
-        st.session_state.clear()
+    # Reinicio de campos si viene del botón de "nueva_orden"
+    query_params = st.query_params
+    if query_params.get("nueva_orden") == "1":
+        st.query_params.clear()
+        st.rerun()
 
     st.title("📦 Generador de Orden de Carga")
     st.markdown("Completa los siguientes datos para generar una orden.")
