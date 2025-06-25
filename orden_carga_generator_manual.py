@@ -74,13 +74,7 @@ def generar_orden_carga_manual():
         col1, col2 = st.columns(2)
         with col1:
             if st.button("✅ Sí, borrar"):
-                for key in list(st.session_state.keys()):
-                    if key.startswith(("origen_", "hora_carga_", "ref_carga_", "link_origen_",
-                                       "destino_", "fecha_descarga_", "hora_descarga_", "ref_cliente_", "link_destino_",
-                                       "orden_form", "Nombre del chofer", "📦", "📝", "🔐", "incluir_todos_links")):
-                        del st.session_state[key]
-                st.session_state.confirmar_borrado = False
-                st.session_state.reiniciar = True  # 🟢 Flag para reinicio seguro
+                st.session_state._confirmado_borrado = True  # ✅ marcamos para ejecutar luego
         with col2:
             if st.button("❌ Cancelar"):
                 st.session_state.confirmar_borrado = False
@@ -96,8 +90,11 @@ def generar_orden_carga_manual():
         for i, (origen, hora, ref_carga, incluir_link) in enumerate(origenes):
             if origen:
                 linea = f"  - Origen {i+1}: {origen}"
+                detalles = []
                 if hora:
-                    linea += f" ({hora}H)"
+                    detalles.append(f"{hora}H")
+                if detalles:
+                    linea += f" ({', '.join(detalles)})"
                 cargas.append(linea)
                 if ref_carga:
                     ref_lines = ref_carga.splitlines()
@@ -145,7 +142,13 @@ def generar_orden_carga_manual():
         st.markdown("### ✉️ Orden generada:")
         st.code(mensaje, language="markdown")
 
-    # Ejecutar reinicio si se activó
-    if st.session_state.get("reiniciar", False):
-        st.session_state.reiniciar = False
-        st.experimental_rerun()
+    # 🔁 Ejecución segura del borrado (fuera del formulario)
+    if st.session_state.get("_confirmado_borrado", False):
+        for key in list(st.session_state.keys()):
+            if key.startswith(("origen_", "hora_carga_", "ref_carga_", "link_origen_",
+                               "destino_", "fecha_descarga_", "hora_descarga_", "ref_cliente_", "link_destino_",
+                               "orden_form", "Nombre del chofer", "📦", "📝", "🔐", "incluir_todos_links")):
+                del st.session_state[key]
+        st.session_state._confirmado_borrado = False
+        st.session_state.confirmar_borrado = False
+        st.rerun()
