@@ -1,5 +1,5 @@
 import streamlit as st
-from datetime import date
+from datetime import date, timedelta
 import urllib.parse
 
 # Diccionario para traducir días de la semana
@@ -44,7 +44,12 @@ def generar_orden_carga_manual():
         for i in range(num_destinos):
             st.markdown(f"#### 📍 Destino {i+1}")
             destino = st.text_input(f"Dirección Destino {i+1}", key=f"destino_{i}")
-            fecha_descarga = st.date_input(f"🗕 Fecha de descarga Destino {i+1}", value=st.session_state.get(f"fecha_descarga_{i}", date.today()), key=f"fecha_descarga_{i}")
+            fecha_descarga_default = fecha_carga + timedelta(days=1)
+            fecha_descarga = st.date_input(
+                f"🗕 Fecha de descarga Destino {i+1}",
+                value=st.session_state.get(f"fecha_descarga_{i}", fecha_descarga_default),
+                key=f"fecha_descarga_{i}"
+            )
             hora_descarga = st.text_input(f"🕓 Hora de descarga Destino {i+1}", key=f"hora_descarga_{i}")
             ref_cliente = st.text_area(f"📌 Referencia cliente Destino {i+1}", key=f"ref_cliente_{i}")
             _incluir_link = st.checkbox("Incluir enlace Maps", value=incluir_todos_links, key=f"link_destino_{i}")
