@@ -31,9 +31,8 @@ def generar_orden_carga_manual():
         fecha_carga = st.date_input("📅 Fecha de carga", value=date.today())
         ref_interna = st.text_input("🔐 Referencia interna")
 
-        incluir_todos_links = st.checkbox("🗺 Incluir enlaces de Google Maps para todas las ubicaciones")
 
-        num_origenes = st.number_input("Número de ubicaciones de carga", min_value=1, max_value=5, value=1)
+        num_origenes = st.number_input("Número de ubicaciones de carga", min_value=1, max_value=10, value=1)
         origenes = []
         for i in range(num_origenes):
             st.markdown(f"#### 📍 Origen {i+1}")
@@ -43,7 +42,7 @@ def generar_orden_carga_manual():
             incluir_link = st.checkbox("Incluir enlace Maps", value=incluir_todos_links, key=f"link_origen_{i}")
             origenes.append((origen.strip(), hora_carga.strip(), ref_carga.strip(), incluir_link))
 
-        num_destinos = st.number_input("Número de ubicaciones de descarga", min_value=1, max_value=5, value=1)
+        num_destinos = st.number_input("Número de ubicaciones de descarga", min_value=1, max_value=10, value=1)
         destinos = []
         for i in range(num_destinos):
             st.markdown(f"#### 🎯 Destino {i+1}")
