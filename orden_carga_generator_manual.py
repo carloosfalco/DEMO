@@ -1,7 +1,27 @@
+import streamlit as st
+from datetime import date, timedelta
+import urllib.parse
+
+# Diccionario para traducir días de la semana
+DIAS_SEMANA_ES = {
+    'Monday': 'Lunes', 'Tuesday': 'Martes', 'Wednesday': 'Miércoles',
+    'Thursday': 'Jueves', 'Friday': 'Viernes', 'Saturday': 'Sábado', 'Sunday': 'Domingo'
+}
+
+def formatear_fecha_con_dia(fecha):
+    dia_en = fecha.strftime('%A')
+    dia_es = DIAS_SEMANA_ES.get(dia_en, dia_en)
+    return f"{dia_es} {fecha.strftime('%d/%m')}"
+
+def generar_enlace_maps(ubicacion):
+    query = urllib.parse.quote_plus(ubicacion)
+    return f"https://www.google.com/maps/search/?api=1&query={query}"
+
 def generar_orden_carga_manual():
     st.title("📦 Generador de Orden de Carga")
     st.markdown("Completa los siguientes datos para generar una orden.")
 
+    # Inicializar valores por defecto
     if "num_origenes" not in st.session_state:
         st.session_state.num_origenes = 1
     if "num_destinos" not in st.session_state:
@@ -54,4 +74,60 @@ def generar_orden_carga_manual():
 
         submitted = st.form_submit_button("Generar orden")
 
-    # (el resto del código permanece igual para generar el mensaje...)
+    if submitted:
+        mensaje = f"Hola {chofer}," if chofer else "Hola,"
+        mensaje += f" esta es la orden de carga para el día {formatear_fecha_con_dia(fecha_carga)}:\n\n"
+
+        if ref_interna:
+            mensaje += f"🔐 Ref. interna: {ref_interna}\n\n"
+
+        cargas = []
+        for i, (origen, hora, ref_carga, incluir_link) in enumerate(origenes):
+            if origen:
+                linea = f"  - Origen {i+1}: {origen}"
+                if hora:
+                    linea += f" ({hora}H)"
+                cargas.append(linea)
+                if ref_carga:
+                    ref_lines = ref_carga.splitlines()
+                    cargas.append(f"    ↪️ Ref. carga: {ref_lines[0]}")
+                    for line in ref_lines[1:]:
+                        cargas.append(f"                   {line}")
+                if incluir_link:
+                    enlace = generar_enlace_maps(origen)
+                    cargas.append(f"    🌐 {enlace}")
+        if cargas:
+            mensaje += f"📍 Cargas ({formatear_fecha_con_dia(fecha_carga)}):\n" + "\n".join(cargas) + "\n"
+
+        descargas = []
+        for i, (destino, fecha_descarga, hora_descarga, ref_cliente, incluir_link) in enumerate(destinos):
+            if destino:
+                linea = f"  - Destino {i+1}: {destino}"
+                detalles = []
+                if fecha_descarga:
+                    detalles.append(formatear_fecha_con_dia(fecha_descarga))
+                if hora_descarga:
+                    detalles.append(hora_descarga)
+                if detalles:
+                    linea += f" ({', '.join(detalles)})"
+                descargas.append(linea)
+                if ref_cliente:
+                    ref_lines = ref_cliente.splitlines()
+                    descargas.append(f"    ↪️ Ref. cliente: {ref_lines[0]}")
+                    for line in ref_lines[1:]:
+                        descargas.append(f"                     {line}")
+                if incluir_link:
+                    enlace = generar_enlace_maps(destino)
+                    descargas.append(f"    🌐 {enlace}")
+        if descargas:
+            mensaje += "\n📍 Descargas:\n" + "\n".join(descargas) + "\n"
+
+        if tipo_mercancia:
+            mensaje += f"\n📦 Tipo de mercancía: {tipo_mercancia}"
+
+        if observaciones:
+            mensaje += f"\n\n📌 {observaciones}"
+
+        mensaje += "\n\nPor favor, avisa de inmediato si surge algún problema o hay riesgo de retraso."
+        st.markdown("### ✉️ Orden generada:")
+        st.code(mensaje.strip(), language="markdown")
