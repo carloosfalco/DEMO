@@ -2,6 +2,7 @@ import streamlit as st
 from datetime import date
 import urllib.parse
 
+# Diccionario para traducir días de la semana
 DIAS_SEMANA_ES = {
     'Monday': 'Lunes', 'Tuesday': 'Martes', 'Wednesday': 'Miércoles',
     'Thursday': 'Jueves', 'Friday': 'Viernes', 'Saturday': 'Sábado', 'Sunday': 'Domingo'
@@ -17,11 +18,12 @@ def generar_enlace_maps(ubicacion):
     return f"https://www.google.com/maps/search/?api=1&query={query}"
 
 def generar_orden_carga_manual():
+    # Si se activó la bandera de reinicio, vaciamos y detenemos la ejecución
     if st.session_state.get("reiniciar", False):
         for key in list(st.session_state.keys()):
             del st.session_state[key]
         st.session_state["reiniciar"] = False
-        st.experimental_rerun()
+        st.stop()
 
     st.title("📦 Generador de Orden de Carga")
     st.markdown("Completa los siguientes datos para generar una orden.")
@@ -75,7 +77,7 @@ def generar_orden_carga_manual():
             if st.button("✅ Sí, borrar"):
                 st.session_state["reiniciar"] = True
                 st.session_state.confirmar_borrado = False
-                st.experimental_rerun()
+                st.stop()
         with col2:
             if st.button("❌ Cancelar"):
                 st.session_state.confirmar_borrado = False
@@ -91,11 +93,8 @@ def generar_orden_carga_manual():
         for i, (origen, hora, ref_carga, incluir_link) in enumerate(origenes):
             if origen:
                 linea = f"  - Origen {i+1}: {origen}"
-                detalles = []
                 if hora:
-                    detalles.append(f"{hora}H")
-                if detalles:
-                    linea += f" ({', '.join(detalles)})"
+                    linea += f" ({hora}H)"
                 cargas.append(linea)
                 if ref_carga:
                     ref_lines = ref_carga.splitlines()
@@ -138,7 +137,5 @@ def generar_orden_carga_manual():
             mensaje += f"\n\n📌 {observaciones}"
 
         mensaje += "\n\nPor favor, avisa de inmediato si surge algún problema o hay riesgo de retraso."
-        mensaje = mensaje.strip()
-
         st.markdown("### ✉️ Orden generada:")
-        st.code(mensaje, language="markdown")
+        st.code(mensaje.strip(), language="markdown")
