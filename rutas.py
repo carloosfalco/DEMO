@@ -1,120 +1,161 @@
 import streamlit as st
-from datetime import date, timedelta
-import urllib.parse
+import openrouteservice
+import requests
+import math
+from datetime import datetime, timedelta
+import folium
+from streamlit_folium import st_folium
+from PIL import Image
 
-# Diccionario para traducir días de la semana
-DIAS_SEMANA_ES = {
-    'Monday': 'Lunes', 'Tuesday': 'Martes', 'Wednesday': 'Miércoles',
-    'Thursday': 'Jueves', 'Friday': 'Viernes', 'Saturday': 'Sábado', 'Sunday': 'Domingo'
-}
+def planificador_rutas():
+    api_key = "5b3ce3597851110001cf6248ec3aedee3fa14ae4b1fd1b2440f2e589"
+    client = openrouteservice.Client(key=api_key)
 
-def formatear_fecha_con_dia(fecha):
-    dia_en = fecha.strftime('%A')
-    dia_es = DIAS_SEMANA_ES.get(dia_en, dia_en)
-    return f"{dia_es} {fecha.strftime('%d/%m')}"
+    st.markdown("""
+        <style>
+            body {
+                background-color: #f5f5f5;
+            }
+            .stButton>button {
+                background-color: #8D1B2D;
+                color: white;
+                border-radius: 6px;
+                padding: 0.6em 1em;
+                border: none;
+                font-weight: bold;
+            }
+            .stButton>button:hover {
+                background-color: #a7283d;
+                color: white;
+            }
+        </style>
+    """, unsafe_allow_html=True)
 
-def generar_enlace_maps(ubicacion):
-    query = urllib.parse.quote_plus(ubicacion)
-    return f"https://www.google.com/maps/search/?api=1&query={query}"
+    logo = Image.open("logo-virosque2-01.png")
+    st.image(logo, width=250)
+    st.markdown("<h1 style='color:#8D1B2D;'>TMS</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='color:white; font-size: 18px; font-weight: bold;'>Planificador de rutas para camiones</p>", unsafe_allow_html=True)
 
-def generar_orden_carga_manual():
-    st.title("📦 Generador de Orden de Carga")
-    st.markdown("Completa los siguientes datos para generar una orden.")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        origen = st.text_input("📍 Origen", value="Valencia, España")
+    with col2:
+        destino = st.text_input("🏁 Destino", value="Madrid, España")
+    with col3:
+        hora_salida_str = st.time_input("🕒 Hora de salida", value=datetime.strptime("08:00", "%H:%M")).strftime("%H:%M")
 
-    with st.form("orden_form"):
-        chofer = st.text_input("Nombre del chofer", key="chofer")
-        fecha_carga = st.date_input("Fecha de carga", value=st.session_state.get("fecha_carga", date.today()), key="fecha_carga")
-        ref_interna = st.text_input("🔐 Referencia interna", key="ref_interna")
+    stops = st.text_area("➕ Paradas intermedias (una por línea)", placeholder="Ej: Albacete, España\nCuenca, España")
 
-        incluir_todos_links = st.checkbox("🗸 Incluir enlaces de Google Maps para todas las ubicaciones", key="incluir_todos_links")
+    if st.button("🔍 Calcular Ruta"):
+        st.session_state.resultados = None
 
-        num_origenes = st.number_input("Número de ubicaciones de carga", min_value=1, max_value=5, value=st.session_state.get("num_origenes", 1), key="num_origenes")
-        origenes = []
-        for i in range(num_origenes):
-            st.markdown(f"#### 📍 Origen {i+1}")
-            origen = st.text_input(f"Dirección Origen {i+1}", key=f"origen_{i}")
-            hora_carga = st.text_input(f"🕒 Hora de carga Origen {i+1}", key=f"hora_carga_{i}")
-            ref_carga = st.text_area(f"🔖 Ref. de carga Origen {i+1}", key=f"ref_carga_{i}")
-            _incluir_link = st.checkbox("Incluir enlace Maps", value=incluir_todos_links, key=f"link_origen_{i}")
-            incluir_link = incluir_todos_links or _incluir_link
-            origenes.append((origen.strip(), hora_carga.strip(), ref_carga.strip(), incluir_link))
+        coord_origen, _ = geocode(origen, api_key)
+        coord_destino, _ = geocode(destino, api_key)
 
-        num_destinos = st.number_input("Número de ubicaciones de descarga", min_value=1, max_value=5, value=st.session_state.get("num_destinos", 1), key="num_destinos")
-        destinos = []
-        for i in range(num_destinos):
-            st.markdown(f"#### 📍 Destino {i+1}")
-            destino = st.text_input(f"Dirección Destino {i+1}", key=f"destino_{i}")
-            fecha_descarga_default = fecha_carga + timedelta(days=1)
-            fecha_descarga = st.date_input(
-                f"Fecha de descarga Destino {i+1}",
-                value=st.session_state.get(f"fecha_descarga_{i}", fecha_descarga_default),
-                key=f"fecha_descarga_{i}"
+        stops_list = []
+        if stops.strip():
+            for parada in stops.strip().split("\n"):
+                coord, _ = geocode(parada, api_key)
+                if coord:
+                    stops_list.append(coord)
+                else:
+                    st.warning(f"❌ No se pudo geolocalizar: {parada}")
+
+        if not coord_origen or not coord_destino:
+            st.error("❌ No se pudo geolocalizar el origen o destino.")
+            return
+
+        coords_totales = [coord_origen] + stops_list + [coord_destino]
+
+        try:
+            ruta = client.directions(
+                coordinates=coords_totales,
+                profile='driving-hgv',
+                preference='recommended',
+                format='geojson'
             )
-            hora_descarga = st.text_input(f"🕓 Hora de descarga Destino {i+1}", key=f"hora_descarga_{i}")
-            ref_cliente = st.text_area(f"📌 Referencia cliente Destino {i+1}", key=f"ref_cliente_{i}")
-            _incluir_link = st.checkbox("Incluir enlace Maps", value=incluir_todos_links, key=f"link_destino_{i}")
-            incluir_link = incluir_todos_links or _incluir_link
-            destinos.append((destino.strip(), fecha_descarga, hora_descarga.strip(), ref_cliente.strip(), incluir_link))
+        except openrouteservice.exceptions.ApiError as e:
+            st.error(f"❌ Error al calcular la ruta: {e}")
+            return
 
-        tipo_mercancia = st.text_input("📦 Tipo de mercancía (opcional)", key="tipo_mercancia").strip()
-        observaciones = st.text_area("📜 Observaciones (opcional)", key="observaciones").strip()
+        segmentos = ruta['features'][0]['properties']['segments']
+        distancia_total = sum(seg["distance"] for seg in segmentos)
+        duracion_total = sum(seg["duration"] for seg in segmentos)
 
-        submitted = st.form_submit_button("Generar orden")
+        distancia_km = distancia_total / 1000
+        duracion_horas = duracion_total / 3600
+        descansos = math.floor(duracion_horas / 4.5)
+        tiempo_total_h = duracion_horas + descansos * 0.75
+        descanso_diario_h = 11 if tiempo_total_h > 13 else 0
+        tiempo_total_real_h = tiempo_total_h + descanso_diario_h
+        hora_salida = datetime.strptime(hora_salida_str, "%H:%M")
+        hora_llegada = hora_salida + timedelta(hours=tiempo_total_real_h)
 
-    if submitted:
-        mensaje = f"Hola {chofer}," if chofer else "Hola,"
-        mensaje += f" esta es la orden de carga para el día {formatear_fecha_con_dia(fecha_carga)}:\n\n"
+        def horas_y_minutos(valor_horas):
+            horas = int(valor_horas)
+            minutos = int(round((valor_horas - horas) * 60))
+            return f"{horas}h {minutos:02d}min"
 
-        if ref_interna:
-            mensaje += f"🔐 Ref. interna: {ref_interna}\n\n"
+        tiempo_conduccion_txt = horas_y_minutos(duracion_horas)
+        tiempo_total_txt = horas_y_minutos(tiempo_total_h)
 
-        cargas = []
-        for i, (origen, hora, ref_carga, incluir_link) in enumerate(origenes):
-            if origen:
-                linea = f"  - Origen {i+1}: {origen}"
-                if hora:
-                    linea += f" ({hora}H)"
-                cargas.append(linea)
-                if ref_carga:
-                    ref_lines = ref_carga.splitlines()
-                    cargas.append(f"    ↪️ Ref. carga: {ref_lines[0]}")
-                    for line in ref_lines[1:]:
-                        cargas.append(f"                   {line}")
-                if incluir_link:
-                    enlace = generar_enlace_maps(origen)
-                    cargas.append(f"    🌐 {enlace}")
-        if cargas:
-            mensaje += f"📍 Cargas ({formatear_fecha_con_dia(fecha_carga)}):\n" + "\n".join(cargas) + "\n"
+        st.session_state.resultados = {
+            "distancia_km": distancia_km,
+            "tiempo_conduccion_txt": tiempo_conduccion_txt,
+            "tiempo_total_txt": tiempo_total_txt,
+            "hora_llegada": hora_llegada.strftime("%H:%M"),
+            "hora_llegada_dt": hora_llegada,
+            "hora_salida_dt": hora_salida,
+            "tiempo_total_real_h": tiempo_total_real_h,
+            "linea": ruta["features"][0]["geometry"]["coordinates"],
+            "coord_origen": coord_origen,
+            "stops_list": stops_list,
+            "coord_destino": coord_destino
+        }
 
-        descargas = []
-        for i, (destino, fecha_descarga, hora_descarga, ref_cliente, incluir_link) in enumerate(destinos):
-            if destino:
-                linea = f"  - Destino {i+1}: {destino}"
-                detalles = []
-                if fecha_descarga:
-                    detalles.append(formatear_fecha_con_dia(fecha_descarga))
-                if hora_descarga:
-                    detalles.append(hora_descarga)
-                if detalles:
-                    linea += f" ({', '.join(detalles)})"
-                descargas.append(linea)
-                if ref_cliente:
-                    ref_lines = ref_cliente.splitlines()
-                    descargas.append(f"    ↪️ Ref. cliente: {ref_lines[0]}")
-                    for line in ref_lines[1:]:
-                        descargas.append(f"                     {line}")
-                if incluir_link:
-                    enlace = generar_enlace_maps(destino)
-                    descargas.append(f"    🌐 {enlace}")
-        if descargas:
-            mensaje += "\n📍 Descargas:\n" + "\n".join(descargas) + "\n"
+    if "resultados" in st.session_state and st.session_state.resultados:
+        r = st.session_state.resultados
 
-        if tipo_mercancia:
-            mensaje += f"\n📦 Tipo de mercancía: {tipo_mercancia}"
+        st.markdown("### 📊 Datos de la ruta")
+        col1, col2, col3, col4, col5 = st.columns(5)
+        col1.metric("🚣 Distancia", f"{r['distancia_km']:.2f} km")
+        col2.metric("🕓 Conducción", r['tiempo_conduccion_txt'])
+        col3.metric("⏱ Total (con descansos)", r['tiempo_total_txt'])
+        col4.metric("📅 Llegada estimada", r['hora_llegada'])
 
-        if observaciones:
-            mensaje += f"\n\n📌 {observaciones}"
+        if r['tiempo_total_real_h'] > 13:
+            st.warning("⚠️ El viaje excede la jornada máxima (13h). Se ha añadido un descanso obligatorio de 11h.")
+        else:
+            st.success("🟢 El viaje puede completarse en una sola jornada de trabajo.")
 
-        mensaje += "\n\nPor favor, avisa de inmediato si surge algún problema o hay riesgo de retraso."
-        st.markdown("### ✉️ Orden generada:")
-        st.code(mensaje.strip(), language="markdown")
+            llegada_tras_descanso = r["hora_llegada_dt"] + timedelta(hours=11)
+            cambia_dia = llegada_tras_descanso.date() > r["hora_llegada_dt"].date()
+            etiqueta = " (día siguiente)" if cambia_dia else ""
+            col5.metric("🛌 Llegada + descanso", llegada_tras_descanso.strftime("%H:%M") + etiqueta)
+
+        linea_latlon = [[p[1], p[0]] for p in r['linea']]
+        m = folium.Map(location=linea_latlon[0], zoom_start=6)
+        folium.Marker(location=[r['coord_origen'][1], r['coord_origen'][0]], tooltip="📍 Origen").add_to(m)
+        for idx, parada in enumerate(r['stops_list']):
+            folium.Marker(location=[parada[1], parada[0]], tooltip=f"Parada {idx + 1}").add_to(m)
+        folium.Marker(location=[r['coord_destino'][1], r['coord_destino'][0]], tooltip="Destino").add_to(m)
+        folium.PolyLine(linea_latlon, color="blue", weight=5).add_to(m)
+        st.markdown("### 🗘️ Ruta estimada en mapa:")
+        st_folium(m, width=1200, height=500)
+
+def geocode(direccion, api_key):
+    url = "https://api.openrouteservice.org/geocode/search"
+    params = {
+        "api_key": api_key,
+        "text": direccion,
+        "boundary.country": "ES",
+        "size": 1
+    }
+    r = requests.get(url, params=params)
+    data = r.json()
+    if data.get("features"):
+        coord = data["features"][0]["geometry"]["coordinates"]
+        label = data["features"][0]["properties"]["label"]
+        return coord, label
+    else:
+        return None, None
