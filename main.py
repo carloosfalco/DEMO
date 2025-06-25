@@ -7,23 +7,23 @@ def main():
 
     st.sidebar.title("📂 Menú")
 
-    # Manejo del botón que inicia una nueva orden y cambia la vista
-    if st.sidebar.button("🧹 Nueva orden de carga"):
+    # Botón para nueva orden de carga
+    if st.sidebar.button("📝 Nueva orden de carga"):
         st.query_params.clear()
-        st.query_params.update({"nueva_orden": "1", "vista": "Orden de carga"})
+        st.query_params["nueva_orden"] = "1"
+        st.query_params["vista"] = "Orden de carga"
         st.rerun()
 
-    # Leer desde query_params si se ha pulsado el botón
-    seleccion = st.query_params.get("vista", "Planificador de rutas")
-
+    # Vista seleccionada en el menú
     seleccion = st.sidebar.radio("Selecciona una opción", [
         "Planificador de rutas",
         "Orden de carga"
-    ], index=1 if seleccion == "Orden de carga" else 0)
+    ], index=1 if st.query_params.get("vista") == "Orden de carga" else 0)
 
-    # Actualiza la vista activa en query_params para persistencia
+    # Guardar la vista actual en la URL
     st.query_params["vista"] = seleccion
 
+    # Lógica de navegación
     if seleccion == "Planificador de rutas":
         planificador_rutas()
     elif seleccion == "Orden de carga":
