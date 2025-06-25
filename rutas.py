@@ -46,9 +46,6 @@ def planificador_rutas():
 
     stops = st.text_area("➕ Paradas intermedias (una por línea)", placeholder="Ej: Albacete, España\nCuenca, España")
 
-    # Selector de tipo de ruta
-    preferencia = st.selectbox("🛣️ Tipo de ruta", options=["recommended", "fastest", "shortest"], index=0)
-
     if st.button("🔍 Calcular Ruta"):
         st.session_state.resultados = None
 
@@ -74,7 +71,7 @@ def planificador_rutas():
             ruta = client.directions(
                 coordinates=coords_totales,
                 profile='driving-hgv',
-                preference=preferencia,
+                preference='recommended',
                 format='geojson'
             )
         except openrouteservice.exceptions.ApiError as e:
