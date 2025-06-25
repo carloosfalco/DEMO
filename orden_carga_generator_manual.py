@@ -21,20 +21,6 @@ def generar_orden_carga_manual():
     st.title("📦 Generador de Orden de Carga")
     st.markdown("Completa los siguientes datos para generar una orden.")
 
-    reiniciar = st.session_state.get("reiniciar", False)
-
-    if reiniciar:
-        for key in list(st.session_state.keys()):
-            if key.startswith((
-                "chofer", "fecha_carga", "ref_interna", "tipo_mercancia", "observaciones",
-                "origen_", "hora_carga_", "ref_carga_", "link_origen_",
-                "destino_", "fecha_descarga_", "hora_descarga_", "ref_cliente_", "link_destino_",
-                "num_origenes", "num_destinos", "incluir_todos_links"
-            )):
-                del st.session_state[key]
-        st.session_state["reiniciar"] = False
-        st.experimental_rerun()
-
     with st.form("orden_form"):
         chofer = st.text_input("Nombre del chofer", key="chofer")
         fecha_carga = st.date_input("📅 Fecha de carga", value=st.session_state.get("fecha_carga", date.today()), key="fecha_carga")
@@ -128,7 +114,15 @@ def generar_orden_carga_manual():
         st.markdown("### ✉️ Orden generada:")
         st.code(mensaje.strip(), language="markdown")
 
-       
+
         if st.button("🧹 Nueva orden"):
-            st.session_state["reiniciar"] = True
+            for key in list(st.session_state.keys()):
+                if key.startswith((
+                    "chofer", "fecha_carga", "ref_interna", "tipo_mercancia", "observaciones",
+                    "origen_", "hora_carga_", "ref_carga_", "link_origen_",
+                    "destino_", "fecha_descarga_", "hora_descarga_", "ref_cliente_", "link_destino_",
+                    "num_origenes", "num_destinos", "incluir_todos_links"
+                )):
+                    del st.session_state[key]
             st.experimental_rerun()
+
