@@ -7,21 +7,26 @@ def main():
 
     st.sidebar.title("📂 Menú")
 
-    # Si se ha pulsado "Nueva orden de carga", limpiar y redirigir
+    # Inicializar variable de selección en sesión
+    if "seleccion" not in st.session_state:
+        st.session_state["seleccion"] = "Planificador de rutas"
+
+    # Botón para limpiar y saltar a orden de carga
     if st.sidebar.button("🧹 Nueva orden de carga"):
-        st.query_params.clear()
-        st.query_params["nueva_orden"] = "1"
-        st.query_params["seleccion"] = "Orden de carga"
+        st.session_state.clear()
+        st.session_state["nueva_orden"] = True
+        st.session_state["seleccion"] = "Orden de carga"
         st.rerun()
 
-    # Selección de menú
+    # Selector de menú (controlado por session_state)
     seleccion = st.sidebar.radio(
         "Selecciona una opción",
         ["Planificador de rutas", "Orden de carga"],
-        index=1 if st.query_params.get("seleccion") == "Orden de carga" else 0
+        index=0 if st.session_state["seleccion"] == "Planificador de rutas" else 1,
+        key="seleccion"
     )
 
-    # Ejecutar la sección correspondiente
+    # Mostrar la página adecuada
     if seleccion == "Planificador de rutas":
         planificador_rutas()
     elif seleccion == "Orden de carga":
