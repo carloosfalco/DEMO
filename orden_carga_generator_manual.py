@@ -21,25 +21,22 @@ def generar_orden_carga_manual():
     st.title("📦 Generador de Orden de Carga")
     st.markdown("Completa los siguientes datos para generar una orden.")
 
-    if "resetear" not in st.session_state:
-        st.session_state.resetear = False
-
-    if st.session_state.resetear:
-        claves_a_borrar = [k for k in st.session_state.keys() if not k.startswith("_") and k != "resetear"]
-        for k in claves_a_borrar:
-            del st.session_state[k]
-        st.session_state.resetear = False
-        st.success("✅ Campos vaciados con éxito")
-        st.stop()
+    # Botón para limpiar campos
+    if st.button("🧹 Nueva orden"):
+        for key in list(st.session_state.keys()):
+            if not key.startswith("_"):
+                del st.session_state[key]
+        st.experimental_set_query_params()
+        st.experimental_rerun()
 
     with st.form("orden_form"):
         chofer = st.text_input("Nombre del chofer", key="chofer")
-        fecha_carga = st.date_input("🗕 Fecha de carga", value=date.today(), key="fecha_carga")
+        fecha_carga = st.date_input("🗕 Fecha de carga", value=st.session_state.get("fecha_carga", date.today()), key="fecha_carga")
         ref_interna = st.text_input("🔐 Referencia interna", key="ref_interna")
 
         incluir_todos_links = st.checkbox("🗸 Incluir enlaces de Google Maps para todas las ubicaciones", key="incluir_todos_links")
 
-        num_origenes = st.number_input("Número de ubicaciones de carga", min_value=1, max_value=5, value=1, key="num_origenes")
+        num_origenes = st.number_input("Número de ubicaciones de carga", min_value=1, max_value=5, value=st.session_state.get("num_origenes", 1), key="num_origenes")
         origenes = []
         for i in range(num_origenes):
             st.markdown(f"#### 📍 Origen {i+1}")
@@ -50,12 +47,12 @@ def generar_orden_carga_manual():
             incluir_link = incluir_todos_links or _incluir_link
             origenes.append((origen.strip(), hora_carga.strip(), ref_carga.strip(), incluir_link))
 
-        num_destinos = st.number_input("Número de ubicaciones de descarga", min_value=1, max_value=5, value=1, key="num_destinos")
+        num_destinos = st.number_input("Número de ubicaciones de descarga", min_value=1, max_value=5, value=st.session_state.get("num_destinos", 1), key="num_destinos")
         destinos = []
         for i in range(num_destinos):
             st.markdown(f"#### 📍 Destino {i+1}")
             destino = st.text_input(f"Dirección Destino {i+1}", key=f"destino_{i}")
-            fecha_descarga = st.date_input(f"🗕 Fecha de descarga Destino {i+1}", value=date.today(), key=f"fecha_descarga_{i}")
+            fecha_descarga = st.date_input(f"🗕 Fecha de descarga Destino {i+1}", value=st.session_state.get(f"fecha_descarga_{i}", date.today()), key=f"fecha_descarga_{i}")
             hora_descarga = st.text_input(f"🕓 Hora de descarga Destino {i+1}", key=f"hora_descarga_{i}")
             ref_cliente = st.text_area(f"📌 Referencia cliente Destino {i+1}", key=f"ref_cliente_{i}")
             _incluir_link = st.checkbox("Incluir enlace Maps", value=incluir_todos_links, key=f"link_destino_{i}")
@@ -65,13 +62,7 @@ def generar_orden_carga_manual():
         tipo_mercancia = st.text_input("📦 Tipo de mercancía (opcional)", key="tipo_mercancia").strip()
         observaciones = st.text_area("📜 Observaciones (opcional)", key="observaciones").strip()
 
-        col1, col2 = st.columns(2)
-        with col1:
-            submitted = st.form_submit_button("Generar orden")
-        with col2:
-            if st.form_submit_button("🧹 Nueva orden"):
-                st.session_state.resetear = True
-                st.experimental_rerun()
+        submitted = st.form_submit_button("Generar orden")
 
     if submitted:
         mensaje = f"Hola {chofer}," if chofer else "Hola,"
