@@ -68,7 +68,7 @@ def generar_orden_carga_manual():
             if origen:
                 linea = f"  - Origen {i+1}: {origen}"
                 if hora:
-                    linea += f" ({hora}H)"
+                    linea += f" ({hora}h)"
                 cargas.append(linea)
                 if ref_carga:
                     ref_lines = ref_carga.splitlines()
