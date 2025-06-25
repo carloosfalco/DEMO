@@ -108,7 +108,7 @@ def generar_orden_carga_manual():
                     enlace = generar_enlace_maps(origen)
                     cargas.append(f"    🌐 {enlace}")
         if cargas:
-            mensaje += "📍 Cargas:\n" + "\n".join(cargas) + "\n"
+            mensaje += f"📍 Cargas ({formatear_fecha_con_dia(fecha_carga)}):\n" + "\n".join(cargas) + "\n"
 
         descargas = []
         for i, (destino, fecha_descarga, hora_descarga, ref_cliente, incluir_link) in enumerate(destinos):
