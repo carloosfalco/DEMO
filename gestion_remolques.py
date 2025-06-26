@@ -30,13 +30,12 @@ def gestion_remolques():
 
     remolques, mantenimientos, subtipos = cargar_datos()
 
-    # Normalizar columna estado
+    # Normalizar estado si falta o viene desordenado
     if "estado" not in remolques.columns:
         remolques["estado"] = "disponible"
     else:
         remolques["estado"] = remolques["estado"].fillna("disponible").str.strip().str.lower()
 
-    # Guardar posibles correcciones
     guardar_datos(remolques, mantenimientos)
 
     tab1, tab2, tab3 = st.tabs(["📋 Disponibles", "🧰 En mantenimiento", "➕ Registrar movimiento"])
@@ -57,8 +56,12 @@ def gestion_remolques():
             matricula = st.text_input("Introduce matrícula del remolque").strip().upper()
             tipo_mant = st.text_input("Descripción del mantenimiento")
 
+            # 🔧 Normalización para evitar errores de comparación
+            subtipos["matricula"] = subtipos["matricula"].astype(str).str.strip().str.upper()
+            matricula_normalizada = matricula.strip().upper()
+
             # Buscar subtipo automáticamente
-            tipo_autom = subtipos[subtipos["matricula"] == matricula]["subtipo"]
+            tipo_autom = subtipos[subtipos["matricula"] == matricula_normalizada]["subtipo"]
             tipo_detectado = tipo_autom.iloc[0] if not tipo_autom.empty else ""
             st.info(f"Tipo detectado: **{tipo_detectado or 'No encontrado'}**")
 
