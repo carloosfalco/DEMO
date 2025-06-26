@@ -137,7 +137,6 @@ def generar_orden_carga_manual():
                             bloque.append(f"                     {line}")
                     if destinos[i][4]:
                         bloque.append(f"    🌐 {generar_enlace_maps(destinos[i][0])}")
-
                 bloques.append("\n".join(bloque))
         else:
             cargas = []
@@ -177,7 +176,9 @@ def generar_orden_carga_manual():
                     if incluir_link:
                         descargas.append(f"    🌐 {generar_enlace_maps(destino)}")
             if descargas:
-                mensaje += "\n📍 Descargas:\n" + "\n".join(descargas) + "\n"
+                fecha_descarga_comun = formatear_fecha_con_dia(destinos[0][1]) if destinos and destinos[0][1] else ""
+                encabezado_descargas = f"\n📍 Descargas ({fecha_descarga_comun}):" if fecha_descarga_comun else "\n📍 Descargas:"
+                mensaje += encabezado_descargas + "\n" + "\n".join(descargas) + "\n"
 
         mensaje += "\n\n".join(bloques)
 
@@ -188,7 +189,7 @@ def generar_orden_carga_manual():
             mensaje += f"\n\n📌 {observaciones}"
 
         if ida_vuelta:
-            mensaje += "\n\n🔁 Este es un viaje de ida y vuelta"
+            mensaje += "\n\n🔁 Este es un viaje de ida y vuelta, asegúrate de revisar bien ambas rutas."
 
         mensaje += "\n\nPor favor, avisa de inmediato si surge algún problema o hay riesgo de retraso."
 
