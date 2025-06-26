@@ -1,5 +1,5 @@
 import streamlit as st
-from datetime import date, timedelta
+from datetime import date
 import urllib.parse
 
 DIAS_SEMANA_ES = {
@@ -41,11 +41,12 @@ def generar_orden_carga_manual():
         destino_1_val = ""
 
         if ida_vuelta:
+            from datetime import timedelta
             fechas_carga = []
             for i in range(2):
                 st.markdown(f"#### 📍 Origen {i+1}")
                 if i == 1:
-                    fecha_carga_i = st.date_input("Fecha de carga Origen 2", key="fecha_carga_2", value=date.today() + timedelta(days=1))
+                    fecha_carga_i = st.date_input("Fecha de carga Origen 2", key="fecha_carga_2", value=date.today())
                     default_origen = destino_1_val
                 else:
                     fecha_carga_i = st.date_input("Fecha de carga Origen 1", key="fecha_carga_1", value=date.today())
@@ -63,15 +64,14 @@ def generar_orden_carga_manual():
                 destino = st.text_input(f"Dirección Destino {i+1}", key=f"destino_{i}")
                 if i == 0:
                     destino_1_val = destino
-                fecha_descarga_default = fecha_carga_i + timedelta(days=1)
-                fecha_descarga = st.date_input(f"Fecha de descarga Destino {i+1}", value=fecha_descarga_default, key=f"fecha_descarga_{i}")
+                fecha_descarga = st.date_input(f"Fecha de descarga Destino {i+1}", value=date.today(), key=f"fecha_descarga_{i}")
                 hora_descarga = st.text_input(f"🕓 Hora de descarga Destino {i+1}", key=f"hora_descarga_{i}")
                 ref_cliente = st.text_area(f"📌 Referencia cliente Destino {i+1}", key=f"ref_cliente_{i}")
                 _incluir_link = st.checkbox("Incluir enlace Maps", value=incluir_todos_links, key=f"link_destino_{i}")
                 incluir_link = incluir_todos_links or _incluir_link
                 destinos.append((destino.strip(), fecha_descarga, hora_descarga.strip(), ref_cliente.strip(), incluir_link))
         else:
-            fecha_carga_unica = st.date_input("📅 Fecha de carga", value=date.today(), key="fecha_carga_unica")
+            fecha_carga_unica = st.date_input("Fecha de carga", value=date.today(), key="fecha_carga_unica")
 
             for i in range(num_origenes):
                 st.markdown(f"#### 📍 Origen {i+1}")
@@ -83,7 +83,7 @@ def generar_orden_carga_manual():
                 origenes.append((origen.strip(), hora_carga.strip(), ref_carga.strip(), incluir_link))
 
             if num_destinos > 0:
-                fecha_descarga_comun = st.date_input("📅 Fecha de descarga", value=fecha_carga_unica + timedelta(days=1), key="fecha_descarga_comun")
+                fecha_descarga_comun = st.date_input("📅 Fecha de descarga", value=date.today(), key="fecha_descarga_comun")
 
             for i in range(num_destinos):
                 st.markdown(f"#### 📍 Destino {i+1}")
