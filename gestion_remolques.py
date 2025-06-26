@@ -1,67 +1,71 @@
-# gestion_remolques.py
+# gestion_remolques.py con base de datos SQLite
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-import os
+import sqlite3
 from io import BytesIO
+import os
 
-REMOLQUES_FILE = "remolques.csv"
-MANTENIMIENTOS_FILE = "mantenimientos.csv"
-SUBTIPOS_FILE = "subtipos_remolques.csv"
-MOVIMIENTOS_FILE = "movimientos_remolques.csv"
+DB_FILE = "remolques.db"
 
-def cargar_datos():
-    try:
-        remolques = pd.read_csv(REMOLQUES_FILE)
-    except FileNotFoundError:
-        remolques = pd.DataFrame(columns=["matricula", "tipo", "parking", "chofer", "fecha", "estado"])
-    try:
-        mantenimientos = pd.read_csv(MANTENIMIENTOS_FILE)
-    except FileNotFoundError:
-        mantenimientos = pd.DataFrame(columns=["matricula", "tipo_mantenimiento"])
-    try:
-        subtipos = pd.read_csv(SUBTIPOS_FILE)
-    except FileNotFoundError:
-        subtipos = pd.DataFrame(columns=["matricula", "subtipo"])
-    return remolques, mantenimientos, subtipos
+def init_db():
+    with sqlite3.connect(DB_FILE) as conn:
+        c = conn.cursor()
+        c.execute('''CREATE TABLE IF NOT EXISTS remolques (
+                        matricula TEXT PRIMARY KEY,
+                        tipo TEXT,
+                        parking TEXT,
+                        chofer TEXT,
+                        fecha TEXT,
+                        estado TEXT
+                    )''')
+        c.execute('''CREATE TABLE IF NOT EXISTS mantenimientos (
+                        matricula TEXT PRIMARY KEY,
+                        tipo_mantenimiento TEXT
+                    )''')
+        c.execute('''CREATE TABLE IF NOT EXISTS movimientos (
+                        fecha_hora TEXT,
+                        matricula TEXT,
+                        accion TEXT,
+                        tipo TEXT,
+                        chofer TEXT,
+                        observaciones TEXT
+                    )''')
+        c.execute('''CREATE TABLE IF NOT EXISTS subtipos (
+                        matricula TEXT PRIMARY KEY,
+                        subtipo TEXT
+                    )''')
+        conn.commit()
 
-def guardar_datos(remolques, mantenimientos):
-    remolques.to_csv(REMOLQUES_FILE, index=False)
-    mantenimientos.to_csv(MANTENIMIENTOS_FILE, index=False)
+def cargar_df(query):
+    with sqlite3.connect(DB_FILE) as conn:
+        return pd.read_sql_query(query, conn)
+
+def ejecutar(query, params=()):
+    with sqlite3.connect(DB_FILE) as conn:
+        conn.execute(query, params)
+        conn.commit()
 
 def registrar_movimiento(matricula, accion, tipo="", chofer="", observaciones=""):
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    nuevo = pd.DataFrame([{ 
-        "fecha_hora": now,
-        "matricula": matricula,
-        "accion": accion,
-        "tipo": tipo,
-        "chofer": chofer,
-        "observaciones": observaciones
-    }])
-    try:
-        movimientos = pd.read_csv(MOVIMIENTOS_FILE)
-        movimientos = pd.concat([movimientos, nuevo], ignore_index=True)
-    except FileNotFoundError:
-        movimientos = nuevo
-    movimientos.to_csv(MOVIMIENTOS_FILE, index=False)
+    ejecutar("INSERT INTO movimientos VALUES (?, ?, ?, ?, ?, ?)", (now, matricula, accion, tipo, chofer, observaciones))
+
+def guardar_remolque(matricula, tipo, parking, chofer, fecha, estado):
+    ejecutar("REPLACE INTO remolques VALUES (?, ?, ?, ?, ?, ?)", (matricula, tipo, parking, chofer, fecha, estado))
 
 def gestion_remolques():
     st.title("🛠 Gestión de Remolques")
-    remolques, mantenimientos, subtipos = cargar_datos()
+    init_db()
 
-    if "estado" not in remolques.columns:
-        remolques["estado"] = "disponible"
-    else:
-        remolques["estado"] = remolques["estado"].fillna("disponible").str.strip().str.lower()
-
-    guardar_datos(remolques, mantenimientos)
+    remolques = cargar_df("SELECT * FROM remolques")
+    mantenimientos = cargar_df("SELECT * FROM mantenimientos")
+    subtipos = cargar_df("SELECT * FROM subtipos")
 
     tab1, tab2, tab3 = st.tabs(["📋 Disponibles", "🛻 En mantenimiento", "➕ Registrar movimiento"])
 
     with tab1:
         st.subheader("Remolques disponibles")
-        disponibles = remolques[remolques["estado"] == "disponible"].copy()
+        disponibles = remolques[remolques["estado"].str.lower() == "disponible"]
 
         if not disponibles.empty:
             disponibles["fecha"] = pd.to_datetime(disponibles["fecha"], errors="coerce")
@@ -74,10 +78,10 @@ def gestion_remolques():
                 chofer_filtro = st.multiselect("Filtrar por chófer", disponibles["Último chófer"].dropna().unique())
                 parking_filtro = st.multiselect("Filtrar por parking", disponibles["Parking"].dropna().unique())
 
-                min_fecha = disponibles["Última fecha de uso"].min()
-                max_fecha = disponibles["Última fecha de uso"].max()
                 activar_fecha = st.checkbox("Filtrar por fecha de uso")
                 if activar_fecha:
+                    min_fecha = disponibles["Última fecha de uso"].min()
+                    max_fecha = disponibles["Última fecha de uso"].max()
                     fecha_rango = st.date_input("Rango de fechas", value=(min_fecha, max_fecha))
 
             if tipo_filtro:
@@ -115,33 +119,21 @@ def gestion_remolques():
 
             if st.button("Registrar entrada"):
                 if matricula and tipo_mant:
-                    ya_existe = remolques["matricula"].str.upper().eq(matricula).any()
-                    if not ya_existe:
-                        nuevo = pd.DataFrame([{ "matricula": matricula, "tipo": tipo, "parking": "", "chofer": ultimo_chofer, "fecha": ultima_fecha.strftime('%Y-%m-%d'), "estado": "mantenimiento" }])
-                        remolques = pd.concat([remolques, nuevo], ignore_index=True)
-                    else:
-                        remolques.loc[remolques["matricula"].str.upper() == matricula, ["tipo", "chofer", "fecha", "estado"]] = tipo, ultimo_chofer, ultima_fecha.strftime('%Y-%m-%d'), "mantenimiento"
-                    if matricula not in mantenimientos["matricula"].values:
-                        entrada = pd.DataFrame([{ "matricula": matricula, "tipo_mantenimiento": tipo_mant }])
-                        mantenimientos = pd.concat([mantenimientos, entrada], ignore_index=True)
+                    ejecutar("REPLACE INTO mantenimientos VALUES (?, ?)", (matricula, tipo_mant))
+                    guardar_remolque(matricula, tipo, "", ultimo_chofer, ultima_fecha.strftime('%Y-%m-%d'), "mantenimiento")
                     registrar_movimiento(matricula, "Entrada a mantenimiento", tipo, ultimo_chofer, tipo_mant)
-                    guardar_datos(remolques, mantenimientos)
                     st.success(f"Remolque {matricula} registrado en mantenimiento.")
                 else:
                     st.warning("Debes introducir matrícula y descripción del mantenimiento.")
 
         elif accion == "Fin de mantenimiento":
-            if not mantenimientos.empty:
-                matricula = st.selectbox("Selecciona matrícula en taller", mantenimientos["matricula"].unique())
+            matriculas = mantenimientos["matricula"].tolist()
+            if matriculas:
+                matricula = st.selectbox("Selecciona matrícula en taller", matriculas)
                 if st.button("Marcar como disponible"):
-                    mantenimientos = mantenimientos[mantenimientos["matricula"] != matricula]
-                    if matricula not in remolques["matricula"].values:
-                        nuevo = pd.DataFrame([{ "matricula": matricula, "tipo": "", "parking": "", "chofer": "", "fecha": datetime.today().strftime('%Y-%m-%d'), "estado": "disponible" }])
-                        remolques = pd.concat([remolques, nuevo], ignore_index=True)
-                    else:
-                        remolques.loc[remolques["matricula"] == matricula, ["estado", "fecha"]] = "disponible", datetime.today().strftime('%Y-%m-%d')
+                    ejecutar("DELETE FROM mantenimientos WHERE matricula = ?", (matricula,))
+                    guardar_remolque(matricula, remolques[remolques.matricula == matricula]["tipo"].values[0] if matricula in remolques.matricula.values else "", "", "", datetime.today().strftime('%Y-%m-%d'), "disponible")
                     registrar_movimiento(matricula, "Fin de mantenimiento")
-                    guardar_datos(remolques, mantenimientos)
                     st.success(f"Remolque {matricula} marcado como disponible.")
             else:
                 st.info("No hay remolques en mantenimiento actualmente.")
@@ -152,19 +144,15 @@ def gestion_remolques():
                 matricula = st.selectbox("Selecciona matrícula disponible", disponibles["matricula"])
                 chofer = st.text_input("Nombre del chófer")
                 if st.button("Asignar remolque"):
-                    remolques.loc[remolques["matricula"] == matricula, ["estado", "chofer", "fecha"]] = "asignado", chofer, datetime.today().strftime('%Y-%m-%d')
+                    ejecutar("UPDATE remolques SET estado = ?, chofer = ?, fecha = ? WHERE matricula = ?", ("asignado", chofer, datetime.today().strftime('%Y-%m-%d'), matricula))
                     registrar_movimiento(matricula, "Asignación a chófer", chofer=chofer)
-                    guardar_datos(remolques, mantenimientos)
                     st.success(f"Remolque {matricula} asignado a {chofer}.")
             else:
                 st.info("No hay remolques disponibles.")
 
         st.divider()
 
-        if not os.path.exists(MOVIMIENTOS_FILE):
-            pd.DataFrame(columns=["fecha_hora", "matricula", "accion", "tipo", "chofer", "observaciones"]).to_csv(MOVIMIENTOS_FILE, index=False)
-
-        movimientos_df = pd.read_csv(MOVIMIENTOS_FILE)
+        movimientos_df = cargar_df("SELECT * FROM movimientos")
         output = BytesIO()
         with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
             movimientos_df.to_excel(writer, index=False, sheet_name="Historial")
