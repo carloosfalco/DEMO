@@ -3,6 +3,7 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import os
+from io import BytesIO
 
 REMOLQUES_FILE = "remolques.csv"
 MANTENIMIENTOS_FILE = "mantenimientos.csv"
@@ -163,5 +164,15 @@ def gestion_remolques():
         if not os.path.exists(MOVIMIENTOS_FILE):
             pd.DataFrame(columns=["fecha_hora", "matricula", "accion", "tipo", "chofer", "observaciones"]).to_csv(MOVIMIENTOS_FILE, index=False)
 
-        with open(MOVIMIENTOS_FILE, "rb") as f:
-            st.download_button("📃 Exportar historial de movimientos", data=f, file_name="historial_movimientos.csv")
+        movimientos_df = pd.read_csv(MOVIMIENTOS_FILE)
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
+            movimientos_df.to_excel(writer, index=False, sheet_name="Historial")
+        output.seek(0)
+
+        st.download_button(
+            "📃 Exportar historial de movimientos",
+            data=output,
+            file_name="historial_movimientos.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
