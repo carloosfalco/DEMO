@@ -1,4 +1,4 @@
-# gestion_remolques.py (rediseñado en modo Kanban)
+# gestion_remolques.py (Kanban + Fix botón asignar)
 import streamlit as st
 import pandas as pd
 import sqlite3
@@ -47,6 +47,10 @@ def gestion_remolques():
     estados = ["disponible", "mantenimiento", "asignado"]
     titulos = ["🟢 Disponibles", "🛠 En mantenimiento", "🚚 Asignados"]
 
+    if "asignando" not in st.session_state:
+        st.session_state.asignando = None
+        st.session_state.chofer_input = ""
+
     for col, estado, titulo in zip(columnas, estados, titulos):
         col.subheader(titulo)
         subdf = remolques[remolques["estado"] == estado]
@@ -58,19 +62,30 @@ def gestion_remolques():
                 st.markdown(f"Parking: {row.get('parking', '-')}")
 
                 if estado == "disponible":
-                    if st.button(f"Asignar {row['matricula']}", key=f"asignar_{row['matricula']}"):
-                        chofer = st.text_input(f"Chofer para {row['matricula']}", key=f"chofer_{row['matricula']}")
-                        if chofer:
+                    if st.session_state.asignando == row['matricula']:
+                        st.session_state.chofer_input = st.text_input(f"Nombre del chófer para {row['matricula']}", key=f"input_{row['matricula']}")
+                        if st.button("Confirmar asignación", key=f"confirmar_{row['matricula']}"):
+                            chofer = st.session_state.chofer_input
                             remolques.loc[remolques['matricula'] == row['matricula'], ["estado", "chofer", "fecha"]] = ["asignado", chofer, datetime.today().strftime("%Y-%m-%d")]
                             registrar_movimiento(row['matricula'], "Asignado", row.get("tipo", ""), chofer)
                             guardar_tabla("remolques", remolques)
+                            st.session_state.asignando = None
                             st.experimental_rerun()
+                        if st.button("Cancelar", key=f"cancelar_{row['matricula']}"):
+                            st.session_state.asignando = None
+                            st.experimental_rerun()
+                    else:
+                        if st.button(f"Asignar {row['matricula']}", key=f"asignar_{row['matricula']}"):
+                            st.session_state.asignando = row['matricula']
+                            st.experimental_rerun()
+
                 elif estado == "asignado":
                     if st.button(f"Finalizar {row['matricula']}", key=f"finalizar_{row['matricula']}"):
                         remolques.loc[remolques['matricula'] == row['matricula'], ["estado", "chofer"]] = ["disponible", ""]
                         registrar_movimiento(row['matricula'], "Finalización de uso", row.get("tipo", ""), row.get("chofer", ""))
                         guardar_tabla("remolques", remolques)
                         st.experimental_rerun()
+
                 elif estado == "mantenimiento":
                     if st.button(f"Reparado {row['matricula']}", key=f"reparado_{row['matricula']}"):
                         remolques.loc[remolques['matricula'] == row['matricula'], ["estado"]] = ["disponible"]
