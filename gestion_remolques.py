@@ -2,6 +2,7 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+import os
 
 REMOLQUES_FILE = "remolques.csv"
 MANTENIMIENTOS_FILE = "mantenimientos.csv"
@@ -55,7 +56,7 @@ def gestion_remolques():
 
     guardar_datos(remolques, mantenimientos)
 
-    tab1, tab2, tab3 = st.tabs(["📋 Disponibles", "🪰 En mantenimiento", "➕ Registrar movimiento"])
+    tab1, tab2, tab3 = st.tabs(["📋 Disponibles", "🛻 En mantenimiento", "➕ Registrar movimiento"])
 
     with tab1:
         st.subheader("Remolques disponibles")
@@ -158,4 +159,9 @@ def gestion_remolques():
                 st.info("No hay remolques disponibles.")
 
         st.divider()
-        st.download_button("📃 Exportar historial de movimientos", data=open(MOVIMIENTOS_FILE, "rb"), file_name="historial_movimientos.csv")
+
+        if not os.path.exists(MOVIMIENTOS_FILE):
+            pd.DataFrame(columns=["fecha_hora", "matricula", "accion", "tipo", "chofer", "observaciones"]).to_csv(MOVIMIENTOS_FILE, index=False)
+
+        with open(MOVIMIENTOS_FILE, "rb") as f:
+            st.download_button("📃 Exportar historial de movimientos", data=f, file_name="historial_movimientos.csv")
