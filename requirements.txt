@@ -10,3 +10,4 @@ pandas
 openai
 transformers
 streamlit-calendar
+XlsxWriter
