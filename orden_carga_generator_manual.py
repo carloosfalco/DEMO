@@ -83,7 +83,7 @@ def generar_orden_carga_manual():
                 origenes.append((origen.strip(), hora_carga.strip(), ref_carga.strip(), incluir_link))
 
             # NUEVO: una única fecha de descarga para todos los destinos
-            fecha_descarga_comun = st.date_input("📅 Fecha de descarga (común a todos los destinos)", value=fecha_carga_1 + timedelta(days=1), key="fecha_descarga_comun")
+            fecha_descarga_comun = st.date_input("Fecha de descarga", value=fecha_carga_1 + timedelta(days=1), key="fecha_descarga_comun")
 
             for i in range(num_destinos):
                 st.markdown(f"#### 📍 Destino {i+1}")
