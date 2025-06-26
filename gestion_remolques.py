@@ -119,14 +119,17 @@ def gestion_remolques():
                         st.session_state.chofer_inputs[row['matricula']] = st.text_input(f"Nombre del chófer para {row['matricula']}", key=f"input_{row['matricula']}")
                         st.session_state.jefe_inputs[row['matricula']] = st.text_input(f"Jefe de tráfico que asigna {row['matricula']}", key=f"jefe_{row['matricula']}")
                         if st.button("Confirmar asignación", key=f"confirmar_{row['matricula']}"):
-                            chofer = st.session_state.chofer_inputs[row['matricula']]
-                            jefe = st.session_state.jefe_inputs[row['matricula']]
-                            remolques.loc[remolques['matricula'] == row['matricula'], ["estado", "chofer", "fecha"]] = ["asignado", chofer, hoy.strftime("%Y-%m-%d")]
-                            registrar_movimiento(row['matricula'], "Asignado", row.get("tipo", ""), chofer, f"Asignado por {jefe}")
-                            guardar_tabla("remolques", remolques)
-                            st.session_state.asignando = None
-                            st.success(f"✅ {row['matricula']} asignado a {chofer} por {jefe}")
-                            st.stop()
+                            chofer = st.session_state.chofer_inputs[row['matricula']].strip()
+                            jefe = st.session_state.jefe_inputs[row['matricula']].strip()
+                            if chofer and jefe:
+                                remolques.loc[remolques['matricula'] == row['matricula'], ["estado", "chofer", "fecha"]] = ["asignado", chofer, hoy.strftime("%Y-%m-%d")]
+                                registrar_movimiento(row['matricula'], "Asignado", row.get("tipo", ""), chofer, f"Asignado por {jefe}")
+                                guardar_tabla("remolques", remolques)
+                                st.session_state.asignando = None
+                                st.success(f"✅ {row['matricula']} asignado a {chofer} por {jefe}")
+                                st.stop()
+                            else:
+                                st.warning("Debes introducir tanto el nombre del chófer como el del jefe de tráfico.")
                         if st.button("Cancelar", key=f"cancelar_{row['matricula']}"):
                             st.session_state.asignando = None
                     else:
@@ -142,12 +145,16 @@ def gestion_remolques():
                         st.stop()
 
                 elif estado == "mantenimiento":
+                    parking_reparado = st.text_input(f"Parking donde queda {row['matricula']}", key=f"parking_{row['matricula']}")
                     if st.button(f"Reparado {row['matricula']}", key=f"reparado_{row['matricula']}"):
-                        remolques.loc[remolques['matricula'] == row['matricula'], ["estado"]] = ["disponible"]
-                        registrar_movimiento(row['matricula'], "Fin mantenimiento", row.get("tipo", ""))
-                        guardar_tabla("remolques", remolques)
-                        st.success(f"🛠 {row['matricula']} reparado")
-                        st.stop()
+                        if parking_reparado.strip():
+                            remolques.loc[remolques['matricula'] == row['matricula'], ["estado", "parking"]] = ["disponible", parking_reparado.strip()]
+                            registrar_movimiento(row['matricula'], "Fin mantenimiento", row.get("tipo", ""), observaciones=f"Queda en {parking_reparado.strip()}")
+                            guardar_tabla("remolques", remolques)
+                            st.success(f"🛠 {row['matricula']} reparado y ubicado en {parking_reparado.strip()}")
+                            st.stop()
+                        else:
+                            st.warning("Debes indicar el parking donde queda el remolque.")
 
     st.divider()
 
