@@ -1,8 +1,8 @@
-# gestion_remolques.py (Kanban + Fix botón asignar sin rerun)
+# gestion_remolques.py (Kanban + Auto eliminación + botón X + etiqueta días)
 import streamlit as st
 import pandas as pd
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta
 from io import BytesIO
 
 DB_FILE = "remolques.db"
@@ -51,6 +51,21 @@ def gestion_remolques():
         st.session_state.asignando = None
         st.session_state.chofer_inputs = {}
 
+    hoy = datetime.today()
+
+    # Eliminar automáticamente remolques asignados hace más de 7 días
+    remolques_filtrados = []
+    for _, row in remolques.iterrows():
+        if row["estado"] == "asignado":
+            try:
+                fecha = datetime.strptime(row.get("fecha", ""), "%Y-%m-%d")
+                if (hoy - fecha).days > 7:
+                    continue  # Se omite de la vista
+            except:
+                pass
+        remolques_filtrados.append(row)
+    remolques = pd.DataFrame(remolques_filtrados)
+
     for col, estado, titulo in zip(columnas, estados, titulos):
         col.subheader(titulo)
         subdf = remolques[remolques["estado"] == estado]
@@ -61,16 +76,33 @@ def gestion_remolques():
                 st.markdown(f"Chofer: {row.get('chofer', '-')}, Fecha: {row.get('fecha', '-')}")
                 st.markdown(f"Parking: {row.get('parking', '-')}")
 
+                # Mostrar días desde la fecha
+                try:
+                    fecha = datetime.strptime(row.get("fecha", ""), "%Y-%m-%d")
+                    dias = (hoy - fecha).days
+                    st.caption(f"🕒 Hace {dias} días")
+                except:
+                    pass
+
+                borrar = st.button("❌", key=f"borrar_{row['matricula']}")
+                if borrar:
+                    remolques = remolques[remolques["matricula"] != row["matricula"]]
+                    registrar_movimiento(row['matricula'], "Borrado manual", row.get("tipo", ""))
+                    guardar_tabla("remolques", remolques)
+                    st.success(f"🗑 Remolque {row['matricula']} eliminado del panel")
+                    st.stop()
+
                 if estado == "disponible":
                     if st.session_state.asignando == row['matricula']:
                         st.session_state.chofer_inputs[row['matricula']] = st.text_input(f"Nombre del chófer para {row['matricula']}", key=f"input_{row['matricula']}")
                         if st.button("Confirmar asignación", key=f"confirmar_{row['matricula']}"):
                             chofer = st.session_state.chofer_inputs[row['matricula']]
-                            remolques.loc[remolques['matricula'] == row['matricula'], ["estado", "chofer", "fecha"]] = ["asignado", chofer, datetime.today().strftime("%Y-%m-%d")]
+                            remolques.loc[remolques['matricula'] == row['matricula'], ["estado", "chofer", "fecha"]] = ["asignado", chofer, hoy.strftime("%Y-%m-%d")]
                             registrar_movimiento(row['matricula'], "Asignado", row.get("tipo", ""), chofer)
                             guardar_tabla("remolques", remolques)
                             st.session_state.asignando = None
                             st.success(f"✅ {row['matricula']} asignado a {chofer}")
+                            st.stop()
                         if st.button("Cancelar", key=f"cancelar_{row['matricula']}"):
                             st.session_state.asignando = None
                     else:
@@ -83,6 +115,7 @@ def gestion_remolques():
                         registrar_movimiento(row['matricula'], "Finalización de uso", row.get("tipo", ""), row.get("chofer", ""))
                         guardar_tabla("remolques", remolques)
                         st.success(f"✅ {row['matricula']} marcado como disponible")
+                        st.stop()
 
                 elif estado == "mantenimiento":
                     if st.button(f"Reparado {row['matricula']}", key=f"reparado_{row['matricula']}"):
@@ -90,6 +123,7 @@ def gestion_remolques():
                         registrar_movimiento(row['matricula'], "Fin mantenimiento", row.get("tipo", ""))
                         guardar_tabla("remolques", remolques)
                         st.success(f"🛠 {row['matricula']} reparado")
+                        st.stop()
 
     st.divider()
 
