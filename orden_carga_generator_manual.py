@@ -188,7 +188,7 @@ def generar_orden_carga_manual():
             mensaje += f"\n\n📌 {observaciones}"
 
         if ida_vuelta:
-            mensaje += "\n\n🔁 Este es un viaje de ida y vuelta, asegúrate de revisar bien ambas rutas."
+            mensaje += "\n\n🔁 Este es un viaje de ida y vuelta"
 
         mensaje += "\n\nPor favor, avisa de inmediato si surge algún problema o hay riesgo de retraso."
 
