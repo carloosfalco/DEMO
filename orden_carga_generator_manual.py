@@ -82,16 +82,17 @@ def generar_orden_carga_manual():
                 incluir_link = incluir_todos_links or _incluir_link
                 origenes.append((origen.strip(), hora_carga.strip(), ref_carga.strip(), incluir_link))
 
+            # NUEVO: una única fecha de descarga para todos los destinos
+            fecha_descarga_comun = st.date_input("📅 Fecha de descarga (común a todos los destinos)", value=fecha_carga_1 + timedelta(days=1), key="fecha_descarga_comun")
+
             for i in range(num_destinos):
                 st.markdown(f"#### 📍 Destino {i+1}")
                 destino = st.text_input(f"Dirección Destino {i+1}", key=f"destino_{i}")
-                fecha_descarga_default = fecha_carga_1 + timedelta(days=1)
-                fecha_descarga = st.date_input(f"Fecha de descarga Destino {i+1}", value=fecha_descarga_default, key=f"fecha_descarga_{i}")
                 hora_descarga = st.text_input(f"🕓 Hora de descarga Destino {i+1}", key=f"hora_descarga_{i}")
                 ref_cliente = st.text_area(f"📌 Referencia cliente Destino {i+1}", key=f"ref_cliente_{i}")
                 _incluir_link = st.checkbox("Incluir enlace Maps", value=incluir_todos_links, key=f"link_destino_{i}")
                 incluir_link = incluir_todos_links or _incluir_link
-                destinos.append((destino.strip(), fecha_descarga, hora_descarga.strip(), ref_cliente.strip(), incluir_link))
+                destinos.append((destino.strip(), fecha_descarga_comun, hora_descarga.strip(), ref_cliente.strip(), incluir_link))
 
         tipo_mercancia = st.text_input("📦 Tipo de mercancía (opcional)", key="tipo_mercancia").strip()
         observaciones = st.text_area("📜 Observaciones (opcional)", key="observaciones").strip()
@@ -124,11 +125,8 @@ def generar_orden_carga_manual():
                 if destinos[i][0]:
                     bloque.append(f"📍 Descarga {i+1} ({formatear_fecha_con_dia(destinos[i][1])}):")
                     linea = f"  - *{destinos[i][0]}*"
-                    detalles = []
                     if destinos[i][2]:
-                        detalles.append(f"{destinos[i][2]}h")
-                    if detalles:
-                        linea += f" ({', '.join(detalles)})"
+                        linea += f" ({destinos[i][2]}h)"
                     bloque.append(linea)
                     if destinos[i][3]:
                         ref_lines = destinos[i][3].splitlines()
@@ -157,16 +155,11 @@ def generar_orden_carga_manual():
                 mensaje += f"📍 Cargas ({formatear_fecha_con_dia(fecha_carga_1)}):\n" + "\n".join(cargas) + "\n"
 
             descargas = []
-            for i, (destino, fecha_descarga, hora_descarga, ref_cliente, incluir_link) in enumerate(destinos):
+            for i, (destino, _, hora_descarga, ref_cliente, incluir_link) in enumerate(destinos):
                 if destino:
                     linea = f"  - *{destino}*"
-                    detalles = []
-                    if fecha_descarga:
-                        detalles.append(formatear_fecha_con_dia(fecha_descarga))
                     if hora_descarga:
-                        detalles.append(f"{hora_descarga}h")
-                    if detalles:
-                        linea += f" ({', '.join(detalles)})"
+                        linea += f" ({hora_descarga}h)"
                     descargas.append(linea)
                     if ref_cliente:
                         ref_lines = ref_cliente.splitlines()
@@ -176,9 +169,8 @@ def generar_orden_carga_manual():
                     if incluir_link:
                         descargas.append(f"    🌐 {generar_enlace_maps(destino)}")
             if descargas:
-                fecha_descarga_comun = formatear_fecha_con_dia(destinos[0][1]) if destinos and destinos[0][1] else ""
-                encabezado_descargas = f"\n📍 Descargas ({fecha_descarga_comun}):" if fecha_descarga_comun else "\n📍 Descargas:"
-                mensaje += encabezado_descargas + "\n" + "\n".join(descargas) + "\n"
+                fecha_descarga_formateada = formatear_fecha_con_dia(fecha_descarga_comun)
+                mensaje += f"\n📍 Descargas ({fecha_descarga_formateada}):\n" + "\n".join(descargas) + "\n"
 
         mensaje += "\n\n".join(bloques)
 
