@@ -1,4 +1,4 @@
-# gestion_remolques.py (Kanban + Auto eliminación + botón X + etiqueta días)
+# gestion_remolques.py (Kanban + Auto eliminación + botón X + etiqueta días + jefe de tráfico)
 import streamlit as st
 import pandas as pd
 import sqlite3
@@ -41,7 +41,19 @@ def gestion_remolques():
     remolques = cargar_tabla("remolques")
     subtipos = cargar_tabla("subtipos")
 
-    remolques["estado"] = remolques["estado"].fillna("disponible").str.lower()
+    columnas_necesarias = ["matricula", "tipo", "chofer", "fecha", "parking", "estado"]
+    for col in columnas_necesarias:
+        if col not in remolques.columns:
+            if col == "fecha":
+                remolques[col] = ""
+            elif col == "estado":
+                remolques[col] = "disponible"
+            else:
+                remolques[col] = ""
+        remolques[col] = remolques[col].fillna("")
+
+    remolques["estado"] = remolques["estado"].str.lower()
+
     columnas = st.columns(3)
 
     estados = ["disponible", "mantenimiento", "asignado"]
@@ -50,6 +62,7 @@ def gestion_remolques():
     if "asignando" not in st.session_state:
         st.session_state.asignando = None
         st.session_state.chofer_inputs = {}
+        st.session_state.jefe_inputs = {}
 
     hoy = datetime.today()
 
@@ -76,7 +89,6 @@ def gestion_remolques():
                 st.markdown(f"Chofer: {row.get('chofer', '-')}, Fecha: {row.get('fecha', '-')}")
                 st.markdown(f"Parking: {row.get('parking', '-')}")
 
-                # Mostrar días desde la fecha
                 try:
                     fecha = datetime.strptime(row.get("fecha", ""), "%Y-%m-%d")
                     dias = (hoy - fecha).days
@@ -95,13 +107,15 @@ def gestion_remolques():
                 if estado == "disponible":
                     if st.session_state.asignando == row['matricula']:
                         st.session_state.chofer_inputs[row['matricula']] = st.text_input(f"Nombre del chófer para {row['matricula']}", key=f"input_{row['matricula']}")
+                        st.session_state.jefe_inputs[row['matricula']] = st.text_input(f"Jefe de tráfico que asigna {row['matricula']}", key=f"jefe_{row['matricula']}")
                         if st.button("Confirmar asignación", key=f"confirmar_{row['matricula']}"):
                             chofer = st.session_state.chofer_inputs[row['matricula']]
+                            jefe = st.session_state.jefe_inputs[row['matricula']]
                             remolques.loc[remolques['matricula'] == row['matricula'], ["estado", "chofer", "fecha"]] = ["asignado", chofer, hoy.strftime("%Y-%m-%d")]
-                            registrar_movimiento(row['matricula'], "Asignado", row.get("tipo", ""), chofer)
+                            registrar_movimiento(row['matricula'], "Asignado", row.get("tipo", ""), chofer, f"Asignado por {jefe}")
                             guardar_tabla("remolques", remolques)
                             st.session_state.asignando = None
-                            st.success(f"✅ {row['matricula']} asignado a {chofer}")
+                            st.success(f"✅ {row['matricula']} asignado a {chofer} por {jefe}")
                             st.stop()
                         if st.button("Cancelar", key=f"cancelar_{row['matricula']}"):
                             st.session_state.asignando = None
