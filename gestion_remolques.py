@@ -25,7 +25,7 @@ def guardar_datos(remolques, mantenimientos):
     remolques.to_csv(REMOLQUES_FILE, index=False)
     mantenimientos.to_csv(MANTENIMIENTOS_FILE, index=False)
 
-def gestion_remolques():
+def gestionar_remolques():
     st.title("🛠 Gestión de Remolques")
 
     remolques, mantenimientos, subtipos = cargar_datos()
