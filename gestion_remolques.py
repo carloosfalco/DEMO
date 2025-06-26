@@ -25,7 +25,7 @@ def guardar_datos(remolques, mantenimientos):
     remolques.to_csv(REMOLQUES_FILE, index=False)
     mantenimientos.to_csv(MANTENIMIENTOS_FILE, index=False)
 
-def gestionar_remolques():
+def gestion_remolques():
     st.title("🛠 Gestión de Remolques")
 
     remolques, mantenimientos, subtipos = cargar_datos()
@@ -114,4 +114,13 @@ def gestionar_remolques():
         elif accion == "Asignación a chófer":
             disponibles = remolques[remolques["estado"] == "disponible"]
             if not disponibles.empty:
-                matricula = st.selectbox("Selec
+                matricula = st.selectbox("Selecciona matrícula disponible", disponibles["matricula"])
+                chofer = st.text_input("Nombre del chófer")
+                if st.button("Asignar remolque"):
+                    remolques.loc[remolques["matricula"] == matricula, "estado"] = "asignado"
+                    remolques.loc[remolques["matricula"] == matricula, "chofer"] = chofer
+                    remolques.loc[remolques["matricula"] == matricula, "fecha"] = datetime.today().strftime('%Y-%m-%d')
+                    guardar_datos(remolques, mantenimientos)
+                    st.success(f"Remolque {matricula} asignado a {chofer}.")
+            else:
+                st.info("No hay remolques disponibles.")
