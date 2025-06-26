@@ -1,4 +1,4 @@
-# gestion_remolques.py (Kanban + Fix botón asignar)
+# gestion_remolques.py (Kanban + Fix botón asignar sin rerun)
 import streamlit as st
 import pandas as pd
 import sqlite3
@@ -49,7 +49,7 @@ def gestion_remolques():
 
     if "asignando" not in st.session_state:
         st.session_state.asignando = None
-        st.session_state.chofer_input = ""
+        st.session_state.chofer_inputs = {}
 
     for col, estado, titulo in zip(columnas, estados, titulos):
         col.subheader(titulo)
@@ -63,35 +63,33 @@ def gestion_remolques():
 
                 if estado == "disponible":
                     if st.session_state.asignando == row['matricula']:
-                        st.session_state.chofer_input = st.text_input(f"Nombre del chófer para {row['matricula']}", key=f"input_{row['matricula']}")
+                        st.session_state.chofer_inputs[row['matricula']] = st.text_input(f"Nombre del chófer para {row['matricula']}", key=f"input_{row['matricula']}")
                         if st.button("Confirmar asignación", key=f"confirmar_{row['matricula']}"):
-                            chofer = st.session_state.chofer_input
+                            chofer = st.session_state.chofer_inputs[row['matricula']]
                             remolques.loc[remolques['matricula'] == row['matricula'], ["estado", "chofer", "fecha"]] = ["asignado", chofer, datetime.today().strftime("%Y-%m-%d")]
                             registrar_movimiento(row['matricula'], "Asignado", row.get("tipo", ""), chofer)
                             guardar_tabla("remolques", remolques)
                             st.session_state.asignando = None
-                            st.experimental_rerun()
+                            st.success(f"✅ {row['matricula']} asignado a {chofer}")
                         if st.button("Cancelar", key=f"cancelar_{row['matricula']}"):
                             st.session_state.asignando = None
-                            st.experimental_rerun()
                     else:
                         if st.button(f"Asignar {row['matricula']}", key=f"asignar_{row['matricula']}"):
                             st.session_state.asignando = row['matricula']
-                            st.experimental_rerun()
 
                 elif estado == "asignado":
                     if st.button(f"Finalizar {row['matricula']}", key=f"finalizar_{row['matricula']}"):
                         remolques.loc[remolques['matricula'] == row['matricula'], ["estado", "chofer"]] = ["disponible", ""]
                         registrar_movimiento(row['matricula'], "Finalización de uso", row.get("tipo", ""), row.get("chofer", ""))
                         guardar_tabla("remolques", remolques)
-                        st.experimental_rerun()
+                        st.success(f"✅ {row['matricula']} marcado como disponible")
 
                 elif estado == "mantenimiento":
                     if st.button(f"Reparado {row['matricula']}", key=f"reparado_{row['matricula']}"):
                         remolques.loc[remolques['matricula'] == row['matricula'], ["estado"]] = ["disponible"]
                         registrar_movimiento(row['matricula'], "Fin mantenimiento", row.get("tipo", ""))
                         guardar_tabla("remolques", remolques)
-                        st.experimental_rerun()
+                        st.success(f"🛠 {row['matricula']} reparado")
 
     st.divider()
 
@@ -111,7 +109,6 @@ def gestion_remolques():
             registrar_movimiento(matricula, "Entrada a mantenimiento", tipo, chofer, mantenimiento)
             guardar_tabla("remolques", remolques)
             st.success(f"Remolque {matricula} registrado en mantenimiento.")
-            st.experimental_rerun()
 
     st.divider()
     with st.expander("📁 Exportar historial"):
