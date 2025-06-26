@@ -72,7 +72,6 @@ def generar_orden_carga_manual():
                 destinos.append((destino.strip(), fecha_descarga, hora_descarga.strip(), ref_cliente.strip(), incluir_link))
         else:
             fecha_carga_unica = st.date_input("Fecha de carga", value=date.today(), key="fecha_carga_unica")
-            fecha_descarga_comun = st.date_input("Fecha de descarga", value=fecha_carga_unica + timedelta(days=1), key="fecha_descarga_comun")
 
             for i in range(num_origenes):
                 st.markdown(f"#### 📍 Origen {i+1}")
@@ -82,6 +81,9 @@ def generar_orden_carga_manual():
                 _incluir_link = st.checkbox("Incluir enlace Maps", value=incluir_todos_links, key=f"link_origen_{i}")
                 incluir_link = incluir_todos_links or _incluir_link
                 origenes.append((origen.strip(), hora_carga.strip(), ref_carga.strip(), incluir_link))
+
+            if num_destinos > 0:
+                fecha_descarga_comun = st.date_input("📅 Fecha de descarga", value=fecha_carga_unica + timedelta(days=1), key="fecha_descarga_comun")
 
             for i in range(num_destinos):
                 st.markdown(f"#### 📍 Destino {i+1}")
