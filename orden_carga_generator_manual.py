@@ -34,7 +34,6 @@ def generar_orden_carga_manual():
 
     with st.form("orden_form"):
         chofer = st.text_input("Nombre del chofer", key="chofer")
-        fecha_carga_1 = st.date_input("Fecha de carga Origen 1", value=st.session_state.get("fecha_carga_1", date.today()), key="fecha_carga_1")
         ref_interna = st.text_input("🔐 Referencia interna", key="ref_interna")
         incluir_todos_links = st.checkbox("Incluir enlaces de Google Maps para todas las ubicaciones", key="incluir_todos_links")
 
@@ -49,7 +48,7 @@ def generar_orden_carga_manual():
                     fecha_carga_i = st.date_input("Fecha de carga Origen 2", key="fecha_carga_2", value=date.today() + timedelta(days=1))
                     default_origen = destino_1_val
                 else:
-                    fecha_carga_i = fecha_carga_1
+                    fecha_carga_i = st.date_input("Fecha de carga Origen 1", key="fecha_carga_1", value=date.today())
                     default_origen = ""
                 fechas_carga.append(fecha_carga_i)
 
@@ -72,7 +71,9 @@ def generar_orden_carga_manual():
                 incluir_link = incluir_todos_links or _incluir_link
                 destinos.append((destino.strip(), fecha_descarga, hora_descarga.strip(), ref_cliente.strip(), incluir_link))
         else:
-            fechas_carga = [fecha_carga_1] * num_origenes
+            fecha_carga_unica = st.date_input("📅 Fecha de carga (común a todos los orígenes)", value=date.today(), key="fecha_carga_unica")
+            fecha_descarga_comun = st.date_input("📅 Fecha de descarga (común a todos los destinos)", value=fecha_carga_unica + timedelta(days=1), key="fecha_descarga_comun")
+
             for i in range(num_origenes):
                 st.markdown(f"#### 📍 Origen {i+1}")
                 origen = st.text_input(f"Dirección Origen {i+1}", key=f"origen_{i}")
@@ -81,9 +82,6 @@ def generar_orden_carga_manual():
                 _incluir_link = st.checkbox("Incluir enlace Maps", value=incluir_todos_links, key=f"link_origen_{i}")
                 incluir_link = incluir_todos_links or _incluir_link
                 origenes.append((origen.strip(), hora_carga.strip(), ref_carga.strip(), incluir_link))
-
-            # NUEVO: una única fecha de descarga para todos los destinos
-            fecha_descarga_comun = st.date_input("Fecha de descarga", value=fecha_carga_1 + timedelta(days=1), key="fecha_descarga_comun")
 
             for i in range(num_destinos):
                 st.markdown(f"#### 📍 Destino {i+1}")
@@ -152,7 +150,7 @@ def generar_orden_carga_manual():
                     if incluir_link:
                         cargas.append(f"    🌐 {generar_enlace_maps(origen)}")
             if cargas:
-                mensaje += f"📍 Cargas ({formatear_fecha_con_dia(fecha_carga_1)}):\n" + "\n".join(cargas) + "\n"
+                mensaje += f"📍 Cargas ({formatear_fecha_con_dia(fecha_carga_unica)}):\n" + "\n".join(cargas) + "\n"
 
             descargas = []
             for i, (destino, _, hora_descarga, ref_cliente, incluir_link) in enumerate(destinos):
@@ -169,8 +167,7 @@ def generar_orden_carga_manual():
                     if incluir_link:
                         descargas.append(f"    🌐 {generar_enlace_maps(destino)}")
             if descargas:
-                fecha_descarga_formateada = formatear_fecha_con_dia(fecha_descarga_comun)
-                mensaje += f"\n📍 Descargas ({fecha_descarga_formateada}):\n" + "\n".join(descargas) + "\n"
+                mensaje += f"\n📍 Descargas ({formatear_fecha_con_dia(fecha_descarga_comun)}):\n" + "\n".join(descargas) + "\n"
 
         mensaje += "\n\n".join(bloques)
 
