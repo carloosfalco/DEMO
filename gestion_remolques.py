@@ -90,9 +90,14 @@ def gestion_remolques():
             remolques[col] = ""
         remolques[col] = remolques[col].fillna("")
 
-    for col, estado, titulo in zip(columnas, estados, titulos):
+    for idx, (col, estado, titulo) in enumerate(zip(columnas, estados, titulos)):
+        if estado == "disponible":
+            with col:
+                filtro_matricula = st.text_input("🔎 Buscar matrícula", key="filtro_disponible").strip().upper()
+        else:
+            filtro_matricula = ""
         col.subheader(titulo)
-        subdf = remolques[remolques["estado"] == estado]
+        subdf = remolques[(remolques["estado"] == estado) & (remolques["matricula"].str.upper().str.contains(filtro_matricula))]
         for _, row in subdf.iterrows():
             if estado == "disponible":
                 resumen = f"{row['matricula']} - {row.get('tipo', '')} - {row.get('parking', '')}"
