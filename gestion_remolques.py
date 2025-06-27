@@ -174,8 +174,8 @@ def gestion_remolques():
         tipo_detectado = subtipos[subtipos["matricula"].str.strip().str.upper() == matricula]["subtipo"].values
         tipo = tipo_detectado[0] if len(tipo_detectado) > 0 else st.text_input("Tipo de vehículo")
         mantenimiento = st.text_input("Descripción del mantenimiento")
-        fecha = st.date_input("Última fecha de uso")
-        chofer = st.text_input("Último chófer")
+        fecha = st.date_input("Fecha de entrada")
+        chofer = st.text_input("Taller")
 
         if st.button("Registrar en mantenimiento"):
             nuevo = pd.DataFrame([{ "matricula": matricula, "tipo": tipo, "chofer": chofer, "fecha": fecha.strftime('%Y-%m-%d'), "parking": "", "estado": "mantenimiento" }])
