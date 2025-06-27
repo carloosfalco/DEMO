@@ -62,6 +62,7 @@ def gestion_remolques():
 
     remolques["estado"] = remolques["estado"].str.lower()
 
+    filtro_matricula_global = st.text_input("🔎 Buscar matrícula (afecta a todas las columnas)", key="filtro_global").strip().upper()
     columnas = st.columns(3)
     estados = ["disponible", "mantenimiento", "asignado"]
     titulos = ["🟢 Disponibles", "🛠 En mantenimiento", "🚚 Asignados"]
@@ -91,13 +92,10 @@ def gestion_remolques():
         remolques[col] = remolques[col].fillna("")
 
     for idx, (col, estado, titulo) in enumerate(zip(columnas, estados, titulos)):
-        if estado == "disponible":
-            with col:
-                filtro_matricula = st.text_input("🔎 Buscar matrícula", key="filtro_disponible").strip().upper()
-        else:
-            filtro_matricula = ""
-        col.subheader(titulo)
-        subdf = remolques[(remolques["estado"] == estado) & (remolques["matricula"].str.upper().str.contains(filtro_matricula))]
+        with col:
+            col.subheader(titulo)
+            # Eliminado filtro individual por columna
+        subdf = remolques[(remolques["estado"] == estado) & (remolques["matricula"].str.upper().str.contains(filtro_matricula_global))]
         for _, row in subdf.iterrows():
             if estado == "disponible":
                 resumen = f"{row['matricula']} - {row.get('tipo', '')} - {row.get('parking', '')}"
