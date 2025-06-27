@@ -208,8 +208,11 @@ def gestion_remolques():
         st.markdown("---")
         st.subheader("🗑 Borrar historial de movimientos")
         pwd = st.text_input("Introduce la contraseña para borrar el historial", type="password")
+
+        CONTRASENA = os.getenv("REMOLQUES_PASSWORD") or st.secrets.get("REMOLQUES_PASSWORD")  # fallback por defecto
+
         if st.button("Borrar historial"):
-            if pwd == os.getenv("REMOLQUES_PASSWORD"):
+            if pwd == CONTRASENA:
                 guardar_tabla("movimientos", pd.DataFrame(columns=["fecha_hora", "matricula", "accion", "tipo", "chofer", "observaciones"]))
                 st.success("✅ Historial de movimientos eliminado correctamente.")
             else:
