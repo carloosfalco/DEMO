@@ -62,7 +62,7 @@ def gestion_remolques():
 
     remolques["estado"] = remolques["estado"].str.lower()
 
-    filtro_matricula_global = st.text_input("🔎 Buscar matrícula (afecta a todas las columnas)", key="filtro_global").strip().upper()
+    filtro_matricula_global = st.text_input("🔎 Buscar matrícula", key="filtro_global").strip().upper()
     columnas = st.columns(3)
     estados = ["disponible", "mantenimiento", "asignado"]
     titulos = ["🟢 Disponibles", "🛠 En mantenimiento", "🚚 Asignados"]
