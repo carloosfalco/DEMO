@@ -162,7 +162,7 @@ def gestion_remolques():
     with st.expander("➕ Registrar nuevo movimiento", expanded=False):
         matricula = st.text_input("Matrícula").strip().upper()
         tipo_detectado = subtipos[subtipos["matricula"].str.strip().str.upper() == matricula]["subtipo"].values
-        tipo = tipo_detectado[0] if len(tipo_detectado) > 0 else st.text_input("Tipo de vehículo")
+        tipo = tipo_detectado[0] if len(tipo_detectado) > 0 else st.selectbox("Tipo de vehículo", ["LONA", "FRIGO MONO", "FRIGO MULTI", "ASTILLERA", "PORTABOBINAS"])
         mantenimiento = st.text_input("Descripción del mantenimiento")
         fecha = st.date_input("Fecha de entrada")
         taller = st.text_input("Taller")
@@ -186,7 +186,7 @@ def gestion_remolques():
         st.download_button("📄 Descargar historial", data=output, file_name="historial_remolques.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
         st.markdown("---")
-        st.markdown("##### Borrar historial de movimientos")
+        st.markdown("#### 🗑 Borrar historial de movimientos")
         pwd = st.text_input("Introduce la contraseña para borrar el historial", type="password")
 
         CONTRASENA = os.getenv("REMOLQUES_PASSWORD") or st.secrets.get("REMOLQUES_PASSWORD")
