@@ -19,14 +19,14 @@ def guardar_tabla(nombre, df):
     with sqlite3.connect(DB_FILE) as conn:
         df.to_sql(nombre, conn, index=False, if_exists="replace")
 
-def registrar_movimiento(matricula, accion, tipo="", chofer="", observaciones=""):
+def registrar_movimiento(matricula, accion, tipo="", taller="", observaciones=""):
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     nuevo = pd.DataFrame([{ 
         "fecha_hora": now,
         "matricula": matricula,
         "accion": accion,
         "tipo": tipo,
-        "chofer": chofer,
+        "taller": taller,
         "observaciones": observaciones
     }])
     try:
@@ -38,7 +38,6 @@ def registrar_movimiento(matricula, accion, tipo="", chofer="", observaciones=""
 
 # ---------------------- UI PRINCIPAL ----------------------
 def gestion_remolques():
-    # Crear tablas vacías si no existen
     def asegurar_tabla(nombre, columnas):
         try:
             df = cargar_tabla(nombre)
@@ -46,30 +45,24 @@ def gestion_remolques():
             df = pd.DataFrame(columns=columnas)
             guardar_tabla(nombre, df)
 
-    asegurar_tabla("remolques", ["matricula", "tipo", "chofer", "fecha", "parking", "estado"])
+    asegurar_tabla("remolques", ["matricula", "tipo", "taller", "fecha", "parking", "estado"])
     asegurar_tabla("subtipos", ["matricula", "subtipo"])
-    asegurar_tabla("movimientos", ["fecha_hora", "matricula", "accion", "tipo", "chofer", "observaciones"])
+    asegurar_tabla("movimientos", ["fecha_hora", "matricula", "accion", "tipo", "taller", "observaciones"])
     st.set_page_config(layout="wide")
-    st.title("🚛 Gestión Visual de Remolques (Kanban)")
+    st.title("🚛 Gestión de Remolques ")
 
     remolques = cargar_tabla("remolques")
     subtipos = cargar_tabla("subtipos")
 
-    columnas_necesarias = ["matricula", "tipo", "chofer", "fecha", "parking", "estado"]
+    columnas_necesarias = ["matricula", "tipo", "taller", "fecha", "parking", "estado"]
     for col in columnas_necesarias:
         if col not in remolques.columns:
-            if col == "fecha":
-                remolques[col] = ""
-            elif col == "estado":
-                remolques[col] = "disponible"
-            else:
-                remolques[col] = ""
+            remolques[col] = ""
         remolques[col] = remolques[col].fillna("")
 
     remolques["estado"] = remolques["estado"].str.lower()
 
     columnas = st.columns(3)
-
     estados = ["disponible", "mantenimiento", "asignado"]
     titulos = ["🟢 Disponibles", "🛠 En mantenimiento", "🚚 Asignados"]
 
@@ -80,14 +73,13 @@ def gestion_remolques():
 
     hoy = datetime.today()
 
-    # Eliminar automáticamente remolques asignados hace más de 7 días
     remolques_filtrados = []
     for _, row in remolques.iterrows():
         if row["estado"] == "asignado":
             try:
                 fecha = datetime.strptime(row.get("fecha", ""), "%Y-%m-%d")
                 if (hoy - fecha).days > 7:
-                    continue  # Se omite de la vista
+                    continue
             except:
                 pass
         remolques_filtrados.append(row)
@@ -95,29 +87,18 @@ def gestion_remolques():
 
     for col in columnas_necesarias:
         if col not in remolques.columns:
-            if col == "fecha":
-                remolques[col] = ""
-            elif col == "estado":
-                remolques[col] = "disponible"
-            else:
-                remolques[col] = ""
+            remolques[col] = ""
         remolques[col] = remolques[col].fillna("")
 
     for col, estado, titulo in zip(columnas, estados, titulos):
         col.subheader(titulo)
         subdf = remolques[remolques["estado"] == estado]
         for _, row in subdf.iterrows():
-            resumen = ""
-            if estado == "mantenimiento":
-                resumen = f"{row['matricula']} - {row.get('chofer', '')}"
-            elif estado == "disponible":
-                resumen = f"{row['matricula']} - {row.get('parking', '')}"
-            elif estado == "asignado":
-                resumen = f"{row['matricula']} - {row.get('chofer', '')}"
+            resumen = f"{row['matricula']} - {row.get('taller', '')}" if estado == "mantenimiento" else f"{row['matricula']} - {row.get('parking' if estado == 'disponible' else 'taller', '')}"
             with col.expander(resumen):
                 st.markdown(f"**{row['matricula']}**  ")
                 st.markdown(f"Tipo: {row.get('tipo', '')}  ")
-                st.markdown(f"Chofer: {row.get('chofer', '-')}, Fecha: {row.get('fecha', '-')}")
+                st.markdown(f"Taller: {row.get('taller', '-')}, Fecha: {row.get('fecha', '-')}")
                 st.markdown(f"Parking: {row.get('parking', '-')}")
 
                 try:
@@ -127,8 +108,7 @@ def gestion_remolques():
                 except:
                     pass
 
-                borrar = st.button("❌", key=f"borrar_{row['matricula']}")
-                if borrar:
+                if st.button("❌", key=f"borrar_{row['matricula']}"):
                     remolques = remolques[remolques["matricula"] != row["matricula"]]
                     registrar_movimiento(row['matricula'], "Borrado manual", row.get("tipo", ""))
                     guardar_tabla("remolques", remolques)
@@ -140,17 +120,17 @@ def gestion_remolques():
                         st.session_state.chofer_inputs[row['matricula']] = st.text_input(f"Tractora para {row['matricula']}", key=f"input_{row['matricula']}")
                         st.session_state.jefe_inputs[row['matricula']] = st.text_input(f"Jefe de tráfico que asigna {row['matricula']}", key=f"jefe_{row['matricula']}")
                         if st.button("Confirmar asignación", key=f"confirmar_{row['matricula']}"):
-                            chofer = st.session_state.chofer_inputs[row['matricula']].strip()
+                            tractora = st.session_state.chofer_inputs[row['matricula']].strip()
                             jefe = st.session_state.jefe_inputs[row['matricula']].strip()
-                            if chofer and jefe:
-                                remolques.loc[remolques['matricula'] == row['matricula'], ["estado", "chofer", "fecha"]] = ["asignado", chofer, hoy.strftime("%Y-%m-%d")]
-                                registrar_movimiento(row['matricula'], "Asignado", row.get("tipo", ""), chofer, f"Asignado por {jefe}")
+                            if tractora and jefe:
+                                remolques.loc[remolques['matricula'] == row['matricula'], ["estado", "taller", "fecha"]] = ["asignado", tractora, hoy.strftime("%Y-%m-%d")]
+                                registrar_movimiento(row['matricula'], "Asignado", row.get("tipo", ""), tractora, f"Asignado por {jefe}")
                                 guardar_tabla("remolques", remolques)
                                 st.session_state.asignando = None
-                                st.success(f"✅ {row['matricula']} asignado a {chofer} por {jefe}")
+                                st.success(f"✅ {row['matricula']} asignado a {tractora} por {jefe}")
                                 st.stop()
                             else:
-                                st.warning("Debes introducir tanto el nombre del chófer como el del jefe de tráfico.")
+                                st.warning("Debes introducir tanto la tractora como el nombre del jefe de tráfico.")
                         if st.button("Cancelar", key=f"cancelar_{row['matricula']}"):
                             st.session_state.asignando = None
                     else:
@@ -159,8 +139,8 @@ def gestion_remolques():
 
                 elif estado == "asignado":
                     if st.button(f"Finalizar {row['matricula']}", key=f"finalizar_{row['matricula']}"):
-                        remolques.loc[remolques['matricula'] == row['matricula'], ["estado", "chofer"]] = ["disponible", ""]
-                        registrar_movimiento(row['matricula'], "Finalización de uso", row.get("tipo", ""), row.get("chofer", ""))
+                        remolques.loc[remolques['matricula'] == row['matricula'], ["estado", "taller"]] = ["disponible", ""]
+                        registrar_movimiento(row['matricula'], "Finalización de uso", row.get("tipo", ""), row.get("taller", ""))
                         guardar_tabla("remolques", remolques)
                         st.success(f"✅ {row['matricula']} marcado como disponible")
                         st.stop()
@@ -185,14 +165,14 @@ def gestion_remolques():
         tipo = tipo_detectado[0] if len(tipo_detectado) > 0 else st.text_input("Tipo de vehículo")
         mantenimiento = st.text_input("Descripción del mantenimiento")
         fecha = st.date_input("Fecha de entrada")
-        chofer = st.text_input("Taller")
+        taller = st.text_input("Taller")
 
         if st.button("Registrar en mantenimiento"):
-            nuevo = pd.DataFrame([{ "matricula": matricula, "tipo": tipo, "chofer": chofer, "fecha": fecha.strftime('%Y-%m-%d'), "parking": "", "estado": "mantenimiento" }])
+            nuevo = pd.DataFrame([{ "matricula": matricula, "tipo": tipo, "taller": taller, "fecha": fecha.strftime('%Y-%m-%d'), "parking": "", "estado": "mantenimiento" }])
             if matricula in remolques["matricula"].values:
                 remolques = remolques[remolques["matricula"] != matricula]
             remolques = pd.concat([remolques, nuevo], ignore_index=True)
-            registrar_movimiento(matricula, "Entrada a mantenimiento", tipo, chofer, mantenimiento)
+            registrar_movimiento(matricula, "Entrada a mantenimiento", tipo, taller, mantenimiento)
             guardar_tabla("remolques", remolques)
             st.success(f"Remolque {matricula} registrado en mantenimiento.")
 
@@ -209,11 +189,11 @@ def gestion_remolques():
         st.subheader("🗑 Borrar historial de movimientos")
         pwd = st.text_input("Introduce la contraseña para borrar el historial", type="password")
 
-        CONTRASENA = os.getenv("REMOLQUES_PASSWORD") or st.secrets.get("REMOLQUES_PASSWORD")  # fallback por defecto
+        CONTRASENA = os.getenv("REMOLQUES_PASSWORD") or st.secrets.get("REMOLQUES_PASSWORD")
 
         if st.button("Borrar historial"):
             if pwd == CONTRASENA:
-                guardar_tabla("movimientos", pd.DataFrame(columns=["fecha_hora", "matricula", "accion", "tipo", "chofer", "observaciones"]))
+                guardar_tabla("movimientos", pd.DataFrame(columns=["fecha_hora", "matricula", "accion", "tipo", "taller", "observaciones"]))
                 st.success("✅ Historial de movimientos eliminado correctamente.")
             else:
                 st.error("❌ Contraseña incorrecta. No se ha eliminado el historial.")
