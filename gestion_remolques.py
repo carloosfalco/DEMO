@@ -35,6 +35,17 @@ def registrar_movimiento(matricula, accion, tipo="", chofer="", observaciones=""
 
 # ---------------------- UI PRINCIPAL ----------------------
 def gestion_remolques():
+    # Crear tablas vacías si no existen
+    def asegurar_tabla(nombre, columnas):
+        try:
+            df = cargar_tabla(nombre)
+        except:
+            df = pd.DataFrame(columns=columnas)
+            guardar_tabla(nombre, df)
+
+    asegurar_tabla("remolques", ["matricula", "tipo", "chofer", "fecha", "parking", "estado"])
+    asegurar_tabla("subtipos", ["matricula", "subtipo"])
+    asegurar_tabla("movimientos", ["fecha_hora", "matricula", "accion", "tipo", "chofer", "observaciones"])
     st.set_page_config(layout="wide")
     st.title("🚛 Gestión Visual de Remolques (Kanban)")
 
