@@ -104,7 +104,14 @@ def gestion_remolques():
         col.subheader(titulo)
         subdf = remolques[remolques["estado"] == estado]
         for _, row in subdf.iterrows():
-            with col.container():
+            resumen = ""
+            if estado == "mantenimiento":
+                resumen = f"{row['matricula']} - {row.get('chofer', '')}"
+            elif estado == "disponible":
+                resumen = f"{row['matricula']} - {row.get('parking', '')}"
+            elif estado == "asignado":
+                resumen = f"{row['matricula']} - {row.get('chofer', '')}"
+            with col.expander(resumen):
                 st.markdown(f"**{row['matricula']}**  ")
                 st.markdown(f"Tipo: {row.get('tipo', '')}  ")
                 st.markdown(f"Chofer: {row.get('chofer', '-')}, Fecha: {row.get('fecha', '-')}")
