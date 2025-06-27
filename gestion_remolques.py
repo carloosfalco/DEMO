@@ -1,5 +1,8 @@
 # gestion_remolques.py (Kanban + Auto eliminación + botón X + etiqueta días + jefe de tráfico)
 import streamlit as st
+import os
+from dotenv import load_dotenv
+load_dotenv()
 import pandas as pd
 import sqlite3
 from datetime import datetime, timedelta
@@ -201,3 +204,13 @@ def gestion_remolques():
             movimientos.to_excel(writer, index=False, sheet_name="Historial")
         output.seek(0)
         st.download_button("📄 Descargar historial", data=output, file_name="historial_remolques.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+        st.markdown("---")
+        st.subheader("🗑 Borrar historial de movimientos")
+        pwd = st.text_input("Introduce la contraseña para borrar el historial", type="password")
+        if st.button("Borrar historial"):
+            if pwd == os.getenv("REMOLQUES_PASSWORD"):
+                guardar_tabla("movimientos", pd.DataFrame(columns=["fecha_hora", "matricula", "accion", "tipo", "chofer", "observaciones"]))
+                st.success("✅ Historial de movimientos eliminado correctamente.")
+            else:
+                st.error("❌ Contraseña incorrecta. No se ha eliminado el historial.")
