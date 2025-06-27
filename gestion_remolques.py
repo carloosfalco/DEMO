@@ -186,7 +186,7 @@ def gestion_remolques():
         st.download_button("📄 Descargar historial", data=output, file_name="historial_remolques.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
         st.markdown("---")
-        st.markdown("### 🗑 Borrar historial de movimientos")
+        st.markdown("##### 🗑 Borrar historial de movimientos")
         pwd = st.text_input("Introduce la contraseña para borrar el historial", type="password")
 
         CONTRASENA = os.getenv("REMOLQUES_PASSWORD") or st.secrets.get("REMOLQUES_PASSWORD")
