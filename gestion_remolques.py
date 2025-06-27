@@ -127,7 +127,7 @@ def gestion_remolques():
 
                 if estado == "disponible":
                     if st.session_state.asignando == row['matricula']:
-                        st.session_state.chofer_inputs[row['matricula']] = st.text_input(f"Nombre del chófer para {row['matricula']}", key=f"input_{row['matricula']}")
+                        st.session_state.chofer_inputs[row['matricula']] = st.text_input(f"Tractora para {row['matricula']}", key=f"input_{row['matricula']}")
                         st.session_state.jefe_inputs[row['matricula']] = st.text_input(f"Jefe de tráfico que asigna {row['matricula']}", key=f"jefe_{row['matricula']}")
                         if st.button("Confirmar asignación", key=f"confirmar_{row['matricula']}"):
                             chofer = st.session_state.chofer_inputs[row['matricula']].strip()
