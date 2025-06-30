@@ -44,7 +44,7 @@ def consulta_matriculas():
     remolque_asignado = choferes_df[choferes_df["Chofer"] == chofer]["Remolque asignado"].values[0]
     tractora_asignada = choferes_df[choferes_df["Chofer"] == chofer]["Tractora asignada"].values[0]
 
-    cambiar_remolque = st.checkbox("Modificar remolque")
+    cambiar_remolque = st.checkbox("Cambio de remolque")
     if cambiar_remolque:
         st.markdown("**Remolque**")
         remolque_actual = st.text_input("Remolque que deja (si aplica):", value=remolque_asignado).upper().strip()
@@ -53,7 +53,7 @@ def consulta_matriculas():
     else:
         remolque_actual = remolque_nuevo = estado_remolque = None
 
-    cambiar_tractora = st.checkbox("Modificar tractora")
+    cambiar_tractora = st.checkbox("Cambio de tractora")
     if cambiar_tractora:
         st.markdown("**Tractora**")
         tractora_actual = st.text_input("Tractora que deja (si aplica):", value=tractora_asignada).upper().strip()
