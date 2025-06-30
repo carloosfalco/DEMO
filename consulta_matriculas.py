@@ -51,6 +51,7 @@ def consulta_matriculas():
                 else:
                     tipo_remolque = "Desconocido"
             else:
+                tipo_remolque = "Desconocido"
             st.success(f"La tractora {tractora_input} la conduce {chofer} junto al remolque {remolque} ({tipo_remolque}) y su jefe de tráfico es {jefe}.")
         else:
             remolque_row = remolques_df[remolques_df["Matrícula"] == remolque_input]
@@ -145,3 +146,4 @@ def consulta_matriculas():
         st.download_button("📥 Descargar historial en CSV", data=csv, file_name="historial_cambios.csv", mime="text/csv")
     except:
         st.info("No se ha encontrado ningún historial para exportar.")
+
