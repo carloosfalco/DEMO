@@ -1,7 +1,8 @@
 import streamlit as st
 from rutas import planificador_rutas
 from orden_carga_generator_manual import generar_orden_carga_manual
-from gestion_remolques import gestion_remolques  # 👈 NUEVO
+from gestion_remolques import gestion_remolques
+from consulta_matriculas import consulta_matriculas  # 👈 NUEVO
 
 def main():
     st.set_page_config(page_title="Virosque TMS", page_icon="🚛", layout="wide")
@@ -10,7 +11,8 @@ def main():
     seleccion = st.sidebar.radio("Selecciona una opción", [
         "Planificador de rutas",
         "Orden de carga",
-        "Gestión de remolques"  # 👈 NUEVA OPCIÓN
+        "Gestión de remolques",
+        "Consulta de matrículas"  # 👈 NUEVA OPCIÓN
     ])
 
     if seleccion == "Planificador de rutas":
@@ -18,7 +20,9 @@ def main():
     elif seleccion == "Orden de carga":
         generar_orden_carga_manual()
     elif seleccion == "Gestión de remolques":
-        gestion_remolques()  # 👈 FUNCIÓN NUEVA
+        gestion_remolques()
+    elif seleccion == "Consulta de matrículas":
+        consulta_matriculas()  # 👈 NUEVO ENLACE
 
 if __name__ == "__main__":
     main()
