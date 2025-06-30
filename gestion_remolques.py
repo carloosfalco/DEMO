@@ -65,7 +65,7 @@ def gestion_remolques():
     filtro_matricula_global = st.text_input("🔎 Buscar matrícula", key="filtro_global").strip().upper()
     columnas = st.columns(3)
     estados = ["disponible", "mantenimiento", "asignado"]
-    titulos = ["🟢 Disponibles", "🛠 En mantenimiento", "🚚 Asignados"]
+    titulos = ["🟢 Disponibles", "🔧 En mantenimiento", "🚚 Asignados"]
 
     if "asignando" not in st.session_state:
         st.session_state.asignando = None
@@ -108,10 +108,8 @@ def gestion_remolques():
                 st.markdown(f"Tipo: {row.get('tipo', '')}  ")
                 st.markdown(f"Taller: {row.get('taller', '-')}, Fecha: {row.get('fecha', '-')}")
                 st.markdown(f"Parking: {row.get('parking', '-')}")
-                if estado == "disponible":
-                    observaciones = row.get("observaciones", "")
-                    if observaciones:
-                        st.markdown(f"📝 Observaciones: {observaciones}")
+                if row.get("observaciones", ""):
+                    st.markdown(f"📝 Observaciones: {row['observaciones']}")
 
                 try:
                     fecha = datetime.strptime(row.get("fecha", ""), "%Y-%m-%d")
@@ -166,9 +164,7 @@ def gestion_remolques():
                             remolques.loc[remolques['matricula'] == row['matricula'], ["estado", "parking"]] = ["disponible", parking_reparado.strip()]
                             registrar_movimiento(row['matricula'], "Fin mantenimiento", row.get("tipo", ""), observaciones=f"Queda en {parking_reparado.strip()}")
                             guardar_tabla("remolques", remolques)
-                            st.success(f"🛠 {row['matricula']} reparado y ubicado en {parking_reparado.strip()}")
+                            st.success(f"🔧 {row['matricula']} reparado y ubicado en {parking_reparado.strip()}")
                             st.stop()
                         else:
                             st.warning("Debes indicar el parking donde queda el remolque.")
-
-    # ... (resto del código sin cambios)
