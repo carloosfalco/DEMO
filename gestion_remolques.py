@@ -109,7 +109,7 @@ def gestion_remolques():
                 st.markdown(f"Taller: {row.get('taller', '-')}, Fecha: {row.get('fecha', '-')}")
                 st.markdown(f"Parking: {row.get('parking', '-')}")
                 if row.get("observaciones", ""):
-                    st.markdown(f"📝 Observaciones: {row['observaciones']}")
+                    st.markdown(f"Observaciones: {row['observaciones']}")
 
                 try:
                     fecha = datetime.strptime(row.get("fecha", ""), "%Y-%m-%d")
