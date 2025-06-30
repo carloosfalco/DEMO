@@ -17,7 +17,6 @@ def consulta_matriculas():
     matricula_input = st.text_input("Introduce una matrícula de tractora o remolque:").upper().strip()
 
     if matricula_input:
-        # Buscar si es tractora
         tractora_row = tractoras_df[tractoras_df["Matrícula"] == matricula_input]
         if not tractora_row.empty:
             chofer = tractora_row.iloc[0]["Chofer asignado"]
@@ -25,9 +24,7 @@ def consulta_matriculas():
             jefe = choferes_df[choferes_df["Chofer"] == chofer]["Jefe de tráfico"].values[0] if chofer in choferes_df["Chofer"].values else "Desconocido"
             tipo_remolque = remolques_df[remolques_df["Matrícula"] == remolque]["Tipo"].values[0] if remolque in remolques_df["Matrícula"].values else "Desconocido"
             st.success(f"La tractora {matricula_input} la conduce {chofer} junto al remolque {remolque} (tipo {tipo_remolque}) y su jefe de tráfico es {jefe}.")
-
         else:
-            # Buscar si es remolque
             remolque_row = remolques_df[remolques_df["Matrícula"] == matricula_input]
             if not remolque_row.empty:
                 chofer = remolque_row.iloc[0]["Chofer asignado"]
@@ -47,50 +44,55 @@ def consulta_matriculas():
     remolque_asignado = choferes_df[choferes_df["Chofer"] == chofer]["Remolque asignado"].values[0]
     tractora_asignada = choferes_df[choferes_df["Chofer"] == chofer]["Tractora asignada"].values[0]
 
-    st.markdown("**Remolque**")
-    remolque_actual = st.text_input("Remolque que deja (si aplica):", value=remolque_asignado).upper().strip()
-    estado_remolque = st.selectbox("Estado del remolque que deja:", ["", "Disponible", "Mantenimiento", "Baja"])
-    remolque_nuevo = st.text_input("Nuevo remolque que asume (si aplica):").upper().strip()
+    with st.expander("🔧 Modificar remolque"):
+        cambiar_remolque = st.checkbox("Activar modificación de remolque")
+        if cambiar_remolque:
+            st.markdown("**Remolque**")
+            remolque_actual = st.text_input("Remolque que deja (si aplica):", value=remolque_asignado).upper().strip()
+            estado_remolque = st.selectbox("Estado del remolque que deja:", ["", "Disponible", "Mantenimiento", "Baja"])
+            remolque_nuevo = st.text_input("Nuevo remolque que asume (si aplica):").upper().strip()
+        else:
+            remolque_actual = remolque_nuevo = estado_remolque = None
 
-    st.markdown("**Tractora**")
-    tractora_actual = st.text_input("Tractora que deja (si aplica):", value=tractora_asignada).upper().strip()
-    estado_tractora = st.selectbox("Estado de la tractora que deja:", ["", "Disponible", "Mantenimiento", "Baja"])
-    tractora_nueva = st.text_input("Nueva tractora que asume (si aplica):").upper().strip()
+    with st.expander("🚚 Modificar tractora"):
+        cambiar_tractora = st.checkbox("Activar modificación de tractora")
+        if cambiar_tractora:
+            st.markdown("**Tractora**")
+            tractora_actual = st.text_input("Tractora que deja (si aplica):", value=tractora_asignada).upper().strip()
+            estado_tractora = st.selectbox("Estado de la tractora que deja:", ["", "Disponible", "Mantenimiento", "Baja"])
+            tractora_nueva = st.text_input("Nueva tractora que asume (si aplica):").upper().strip()
+        else:
+            tractora_actual = tractora_nueva = estado_tractora = None
 
     confirmar = st.button("Registrar cambio")
 
     if confirmar:
-        # --- CAMBIO DE REMOLQUE ---
-        if remolque_actual:
+        if cambiar_remolque and remolque_actual:
             remolques_df.loc[remolques_df["Matrícula"] == remolque_actual, ["Chofer asignado", "Tractora asignada"]] = ["", ""]
             if estado_remolque:
                 remolques_df.loc[remolques_df["Matrícula"] == remolque_actual, "Estado"] = estado_remolque
-
-        if remolque_nuevo:
+        if cambiar_remolque and remolque_nuevo:
             remolques_df.loc[remolques_df["Matrícula"] == remolque_nuevo, "Chofer asignado"] = chofer
-            remolques_df.loc[remolques_df["Matrícula"] == remolque_nuevo, "Tractora asignada"] = tractora_nueva or tractora_actual
+            remolques_df.loc[remolques_df["Matrícula"] == remolque_nuevo, "Tractora asignada"] = tractora_nueva or tractora_asignada
             choferes_df.loc[choferes_df["Chofer"] == chofer, "Remolque asignado"] = remolque_nuevo
 
-        # --- CAMBIO DE TRACTORA ---
-        if tractora_actual:
+        if cambiar_tractora and tractora_actual:
             tractoras_df.loc[tractoras_df["Matrícula"] == tractora_actual, ["Remolque asignado", "Chofer asignado"]] = ["", ""]
             if estado_tractora:
                 tractoras_df.loc[tractoras_df["Matrícula"] == tractora_actual, "Estado"] = estado_tractora
-
-        if tractora_nueva:
+        if cambiar_tractora and tractora_nueva:
             tractoras_df.loc[tractoras_df["Matrícula"] == tractora_nueva, "Chofer asignado"] = chofer
-            tractoras_df.loc[tractoras_df["Matrícula"] == tractora_nueva, "Remolque asignado"] = remolque_nuevo or remolque_actual
+            tractoras_df.loc[tractoras_df["Matrícula"] == tractora_nueva, "Remolque asignado"] = remolque_nuevo or remolque_asignado
             choferes_df.loc[choferes_df["Chofer"] == chofer, "Tractora asignada"] = tractora_nueva
-        else:
+
+        if cambiar_tractora and not tractora_nueva:
             choferes_df.loc[choferes_df["Chofer"] == chofer, "Tractora asignada"] = ""
 
-        # --- GUARDAR CAMBIOS ---
         with pd.ExcelWriter("base_datos_MAKE_Virosque.xlsx", engine="openpyxl", mode="a", if_sheet_exists="overlay") as writer:
             choferes_df.to_excel(writer, sheet_name="Chóferes", index=False)
             remolques_df.to_excel(writer, sheet_name="Remolques", index=False)
             tractoras_df.to_excel(writer, sheet_name="Tractoras", index=False)
 
-        # --- HISTORIAL ---
         try:
             historial_df = pd.read_excel("base_datos_MAKE_Virosque.xlsx", sheet_name="Historial")
         except:
