@@ -3,15 +3,23 @@ import pandas as pd
 from datetime import datetime
 import re
 
-def normalizar_tractora(input_txt):
-    # Acepta solo números y completa con letras por defecto
-    match = re.match(r"^\d{4}", input_txt)
-    return input_txt if not match else f"{match.group()}NBM"
+def normalizar_tractora(input_txt, df):
+    input_txt = input_txt.upper().strip()
+    if input_txt in df["Matrícula"].values:
+        return input_txt
+    posibles = df[df["Matrícula"].str.startswith(input_txt)]
+    if not posibles.empty:
+        return posibles.iloc[0]["Matrícula"]
+    return input_txt
 
-def normalizar_remolque(input_txt):
-    # Acepta formato R+4 números
-    match = re.match(r"^R\d{4}", input_txt)
-    return match.group() if match else input_txt
+def normalizar_remolque(input_txt, df):
+    input_txt = input_txt.upper().strip()
+    if input_txt in df["Matrícula"].values:
+        return input_txt
+    posibles = df[df["Matrícula"].str.startswith(input_txt)]
+    if not posibles.empty:
+        return posibles.iloc[0]["Matrícula"]
+    return input_txt
 
 def consulta_matriculas():
     st.title("🔍 Consulta de matrículas")
@@ -28,8 +36,8 @@ def consulta_matriculas():
     matricula_input = st.text_input("Introduce una matrícula de tractora o remolque:").upper().strip()
 
     if matricula_input:
-        tractora_input = normalizar_tractora(matricula_input)
-        remolque_input = normalizar_remolque(matricula_input)
+        tractora_input = normalizar_tractora(matricula_input, tractoras_df)
+        remolque_input = normalizar_remolque(matricula_input, remolques_df)
 
         tractora_row = tractoras_df[tractoras_df["Matrícula"] == tractora_input]
         if not tractora_row.empty:
@@ -62,10 +70,10 @@ def consulta_matriculas():
     if cambiar_remolque:
         st.markdown("**Remolque**")
         remolque_actual = st.text_input("Remolque que deja (si aplica):", value=remolque_asignado).upper().strip()
-        remolque_actual = normalizar_remolque(remolque_actual)
+        remolque_actual = normalizar_remolque(remolque_actual, remolques_df)
         estado_remolque = st.selectbox("Estado del remolque que deja:", ["", "Disponible", "Mantenimiento", "Baja"])
         remolque_nuevo = st.text_input("Nuevo remolque que asume (si aplica):").upper().strip()
-        remolque_nuevo = normalizar_remolque(remolque_nuevo)
+        remolque_nuevo = normalizar_remolque(remolque_nuevo, remolques_df)
     else:
         remolque_actual = remolque_nuevo = estado_remolque = None
 
@@ -73,10 +81,10 @@ def consulta_matriculas():
     if cambiar_tractora:
         st.markdown("**Tractora**")
         tractora_actual = st.text_input("Tractora que deja (si aplica):", value=tractora_asignada).upper().strip()
-        tractora_actual = normalizar_tractora(tractora_actual)
+        tractora_actual = normalizar_tractora(tractora_actual, tractoras_df)
         estado_tractora = st.selectbox("Estado de la tractora que deja:", ["", "Disponible", "Mantenimiento", "Baja"])
         tractora_nueva = st.text_input("Nueva tractora que asume (si aplica):").upper().strip()
-        tractora_nueva = normalizar_tractora(tractora_nueva)
+        tractora_nueva = normalizar_tractora(tractora_nueva, tractoras_df)
     else:
         tractora_actual = tractora_nueva = estado_tractora = None
 
