@@ -44,25 +44,23 @@ def consulta_matriculas():
     remolque_asignado = choferes_df[choferes_df["Chofer"] == chofer]["Remolque asignado"].values[0]
     tractora_asignada = choferes_df[choferes_df["Chofer"] == chofer]["Tractora asignada"].values[0]
 
-    with st.expander("🔧 Modificar remolque"):
-        cambiar_remolque = st.checkbox("Activar modificación de remolque")
-        if cambiar_remolque:
-            st.markdown("**Remolque**")
-            remolque_actual = st.text_input("Remolque que deja (si aplica):", value=remolque_asignado).upper().strip()
-            estado_remolque = st.selectbox("Estado del remolque que deja:", ["", "Disponible", "Mantenimiento", "Baja"])
-            remolque_nuevo = st.text_input("Nuevo remolque que asume (si aplica):").upper().strip()
-        else:
-            remolque_actual = remolque_nuevo = estado_remolque = None
+    cambiar_remolque = st.checkbox("Modificar remolque")
+    if cambiar_remolque:
+        st.markdown("**Remolque**")
+        remolque_actual = st.text_input("Remolque que deja (si aplica):", value=remolque_asignado).upper().strip()
+        estado_remolque = st.selectbox("Estado del remolque que deja:", ["", "Disponible", "Mantenimiento", "Baja"])
+        remolque_nuevo = st.text_input("Nuevo remolque que asume (si aplica):").upper().strip()
+    else:
+        remolque_actual = remolque_nuevo = estado_remolque = None
 
-    with st.expander("🚚 Modificar tractora"):
-        cambiar_tractora = st.checkbox("Activar modificación de tractora")
-        if cambiar_tractora:
-            st.markdown("**Tractora**")
-            tractora_actual = st.text_input("Tractora que deja (si aplica):", value=tractora_asignada).upper().strip()
-            estado_tractora = st.selectbox("Estado de la tractora que deja:", ["", "Disponible", "Mantenimiento", "Baja"])
-            tractora_nueva = st.text_input("Nueva tractora que asume (si aplica):").upper().strip()
-        else:
-            tractora_actual = tractora_nueva = estado_tractora = None
+    cambiar_tractora = st.checkbox("Modificar tractora")
+    if cambiar_tractora:
+        st.markdown("**Tractora**")
+        tractora_actual = st.text_input("Tractora que deja (si aplica):", value=tractora_asignada).upper().strip()
+        estado_tractora = st.selectbox("Estado de la tractora que deja:", ["", "Disponible", "Mantenimiento", "Baja"])
+        tractora_nueva = st.text_input("Nueva tractora que asume (si aplica):").upper().strip()
+    else:
+        tractora_actual = tractora_nueva = estado_tractora = None
 
     confirmar = st.button("Registrar cambio")
 
