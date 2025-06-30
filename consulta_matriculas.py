@@ -46,10 +46,7 @@ def consulta_matriculas():
             jefe = choferes_df[choferes_df["Chofer"] == chofer]["Jefe de tráfico"].values[0] if chofer in choferes_df["Chofer"].values else "Desconocido"
             if remolque and remolque in remolques_df["Matrícula"].values:
                 fila = remolques_df[remolques_df["Matrícula"] == remolque]
-                if not fila.empty and "tipo" in fila.columns:
-                    tipo_remolque = fila.iloc[0]["Tipo"]
-                else:
-                    tipo_remolque = "Desconocido"
+                tipo_remolque = fila.iloc[0]["Tipo"] if "Tipo" in fila.columns else "Desconocido"
             else:
                 tipo_remolque = "Desconocido"
             st.success(f"La tractora {tractora_input} la conduce {chofer} junto al remolque {remolque} ({tipo_remolque}) y su jefe de tráfico es {jefe}.")
@@ -146,4 +143,3 @@ def consulta_matriculas():
         st.download_button("📥 Descargar historial en CSV", data=csv, file_name="historial_cambios.csv", mime="text/csv")
     except:
         st.info("No se ha encontrado ningún historial para exportar.")
-
