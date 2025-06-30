@@ -45,7 +45,7 @@ def gestion_remolques():
             df = pd.DataFrame(columns=columnas)
             guardar_tabla(nombre, df)
 
-    asegurar_tabla("remolques", ["matricula", "tipo", "taller", "fecha", "parking", "estado"])
+    asegurar_tabla("remolques", ["matricula", "tipo", "taller", "fecha", "parking", "estado", "observaciones"])
     asegurar_tabla("subtipos", ["matricula", "subtipo"])
     asegurar_tabla("movimientos", ["fecha_hora", "matricula", "accion", "tipo", "taller", "observaciones"])
     st.set_page_config(layout="wide")
@@ -54,7 +54,7 @@ def gestion_remolques():
     remolques = cargar_tabla("remolques")
     subtipos = cargar_tabla("subtipos")
 
-    columnas_necesarias = ["matricula", "tipo", "taller", "fecha", "parking", "estado"]
+    columnas_necesarias = ["matricula", "tipo", "taller", "fecha", "parking", "estado", "observaciones"]
     for col in columnas_necesarias:
         if col not in remolques.columns:
             remolques[col] = ""
@@ -137,7 +137,7 @@ def gestion_remolques():
                             jefe = st.session_state.jefe_inputs[row['matricula']].strip()
                             observaciones = st.session_state.observaciones_inputs[row['matricula']].strip()
                             if tractora and jefe:
-                                remolques.loc[remolques['matricula'] == row['matricula'], ["estado", "taller", "fecha"]] = ["asignado", tractora, hoy.strftime("%Y-%m-%d")]
+                                remolques.loc[remolques['matricula'] == row['matricula'], ["estado", "taller", "fecha", "observaciones"]] = ["asignado", tractora, hoy.strftime("%Y-%m-%d"), observaciones]
                                 registrar_movimiento(row['matricula'], "Asignado", row.get("tipo", ""), tractora, f"Asignado por {jefe}. {observaciones}")
                                 guardar_tabla("remolques", remolques)
                                 st.session_state.asignando = None
@@ -183,7 +183,7 @@ def gestion_remolques():
         taller = st.text_input("Taller")
 
         if st.button("Registrar en mantenimiento"):
-            nuevo = pd.DataFrame([{ "matricula": matricula, "tipo": tipo, "taller": taller, "fecha": fecha.strftime('%Y-%m-%d'), "parking": "", "estado": "mantenimiento" }])
+            nuevo = pd.DataFrame([{ "matricula": matricula, "tipo": tipo, "taller": taller, "fecha": fecha.strftime('%Y-%m-%d'), "parking": "", "estado": "mantenimiento", "observaciones": observaciones }])
             if matricula in remolques["matricula"].values:
                 remolques = remolques[remolques["matricula"] != matricula]
             remolques = pd.concat([remolques, nuevo], ignore_index=True)
