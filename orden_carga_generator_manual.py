@@ -1,6 +1,6 @@
+import streamlit as st
 from datetime import date, timedelta
 import urllib.parse
-import streamlit as st
 
 DIAS_SEMANA_ES = {
     'Monday': 'Lunes', 'Tuesday': 'Martes', 'Wednesday': 'Miércoles',
@@ -45,9 +45,9 @@ def generar_orden_carga_manual():
             for i in range(2):
                 st.markdown(f"#### 📍 Origen {i+1}")
                 fecha_carga_i = st.date_input(f"Fecha de carga Origen {i+1}", key=f"fecha_carga_{i}", value=date.today())
-                default_origen = destino_1_val if i == 1 else ""
                 fechas_carga.append(fecha_carga_i)
 
+                default_origen = destino_1_val if i == 1 else ""
                 origen = st.text_input(f"Dirección Origen {i+1}", value=default_origen, key=f"origen_{i}")
                 hora_carga = st.text_input(f"🕒 Hora de carga Origen {i+1}", key=f"hora_carga_{i}")
                 ref_carga = st.text_area(f"🔖 Ref. de carga Origen {i+1}", key=f"ref_carga_{i}")
@@ -67,14 +67,12 @@ def generar_orden_carga_manual():
                 destinos.append((destino.strip(), fecha_descarga, hora_descarga.strip(), ref_cliente.strip(), incluir_link))
         else:
             fecha_carga_unica = st.date_input("📅 Fecha de carga", value=date.today(), key="fecha_carga_unica")
+            entregar_seguido = st.checkbox("Entregar de seguido", key="entregar_seguido")
 
-            cols = st.columns([3, 2])
-            with cols[0]:
-                fecha_descarga_comun = st.date_input("📅 Fecha de descarga", key="fecha_descarga_comun", value=date.today() + timedelta(days=1))
-            with cols[1]:
-                entregar_de_seguido = st.checkbox("Entregar de seguido", key="entregar_de_seguido")
-                if entregar_de_seguido:
-                    fecha_descarga_comun = fecha_carga_unica
+            if entregar_seguido:
+                fecha_descarga_comun = fecha_carga_unica
+            else:
+                fecha_descarga_comun = st.date_input("📅 Fecha de descarga", value=fecha_carga_unica + timedelta(days=1), key="fecha_descarga_comun")
 
             for i in range(num_origenes):
                 st.markdown(f"#### 📍 Origen {i+1}")
@@ -99,4 +97,90 @@ def generar_orden_carga_manual():
         submitted = st.form_submit_button("Generar orden")
 
     if submitted:
-        st.success("Orden generada correctamente ✅")
+        mensaje = f"Hola {chofer}," if chofer else "Hola,"
+        mensaje += f" esta es la orden de carga:\n\n"
+        if ref_interna:
+            mensaje += f"🔐 Ref. interna: {ref_interna}\n\n"
+
+        bloques = []
+        if ida_vuelta:
+            for i in range(2):
+                bloque = []
+                if origenes[i][0]:
+                    bloque.append(f"📍 Carga {i+1} ({formatear_fecha_con_dia(fechas_carga[i])}):")
+                    linea = f"  - *{origenes[i][0]}*"
+                    if origenes[i][1]:
+                        linea += f" ({origenes[i][1]}h)"
+                    bloque.append(linea)
+                    if origenes[i][2]:
+                        ref_lines = origenes[i][2].splitlines()
+                        bloque.append(f"    Ref. carga: {ref_lines[0]}")
+                        for line in ref_lines[1:]:
+                            bloque.append(f"                   {line}")
+                    if origenes[i][3]:
+                        bloque.append(f"    🌐 {generar_enlace_maps(origenes[i][0])}")
+
+                if destinos[i][0]:
+                    bloque.append(f"📍 Descarga {i+1} ({formatear_fecha_con_dia(destinos[i][1])}):")
+                    linea = f"  - *{destinos[i][0]}*"
+                    if destinos[i][2]:
+                        linea += f" ({destinos[i][2]}h)"
+                    bloque.append(linea)
+                    if destinos[i][3]:
+                        ref_lines = destinos[i][3].splitlines()
+                        bloque.append(f"    Ref. cliente: {ref_lines[0]}")
+                        for line in ref_lines[1:]:
+                            bloque.append(f"                     {line}")
+                    if destinos[i][4]:
+                        bloque.append(f"    🌐 {generar_enlace_maps(destinos[i][0])}")
+                bloques.append("\\n".join(bloque))
+        else:
+            cargas = []
+            for i, (origen, hora, ref_carga, incluir_link) in enumerate(origenes):
+                if origen:
+                    linea = f"  - *{origen}*"
+                    if hora:
+                        linea += f" ({hora}h)"
+                    cargas.append(linea)
+                    if ref_carga:
+                        ref_lines = ref_carga.splitlines()
+                        cargas.append(f"    Ref. carga: {ref_lines[0]}")
+                        for line in ref_lines[1:]:
+                            cargas.append(f"                   {line}")
+                    if incluir_link:
+                        cargas.append(f"    🌐 {generar_enlace_maps(origen)}")
+            if cargas:
+                mensaje += f"📍 Cargas ({formatear_fecha_con_dia(fecha_carga_unica)}):\\n" + "\\n".join(cargas) + "\\n"
+
+            descargas = []
+            for i, (destino, _, hora_descarga, ref_cliente, incluir_link) in enumerate(destinos):
+                if destino:
+                    linea = f"  - *{destino}*"
+                    if hora_descarga:
+                        linea += f" ({hora_descarga}h)"
+                    descargas.append(linea)
+                    if ref_cliente:
+                        ref_lines = ref_cliente.splitlines()
+                        descargas.append(f"    Ref. cliente: {ref_lines[0]}")
+                        for line in ref_lines[1:]:
+                            descargas.append(f"                     {line}")
+                    if incluir_link:
+                        descargas.append(f"    🌐 {generar_enlace_maps(destino)}")
+            if descargas:
+                mensaje += f"\\n📍 Descargas ({formatear_fecha_con_dia(fecha_descarga_comun)}):\\n" + "\\n".join(descargas) + "\\n"
+
+        mensaje += "\\n\\n".join(bloques)
+
+        if tipo_mercancia:
+            mensaje += f"\\n\\n📦 Tipo de mercancía: {tipo_mercancia}"
+
+        if observaciones:
+            mensaje += f"\\n\\n📌 {observaciones}"
+
+        if ida_vuelta:
+            mensaje += "\\n\\n🔁 Este es un viaje de ida y vuelta."
+
+        mensaje += "\\n\\nPor favor, avisa de inmediato si surge algún problema o hay riesgo de retraso."
+
+        st.markdown("### ✉️ Orden generada:")
+        st.code(mensaje.strip(), language="markdown")
