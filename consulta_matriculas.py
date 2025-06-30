@@ -44,13 +44,13 @@ def consulta_matriculas():
 
     st.markdown("**Remolque**")
     remolque_actual = st.text_input("Remolque que deja (si aplica):").upper().strip()
-    estado_remolque = st.selectbox("Nuevo estado del remolque dejado:", ["", "Disponible", "Mantenimiento", "Baja"])
+    estado_remolque = st.selectbox("Estado del remolque que deja:", ["", "Disponible", "Mantenimiento", "Baja"])
     remolque_nuevo = st.text_input("Nuevo remolque que asume (si aplica):").upper().strip()
 
     st.markdown("**Tractora**")
     tractora_actual = choferes_df[choferes_df["Chofer"] == chofer]["Tractora asignada"].values[0]
-    tractora_nueva = st.text_input("Nueva tractora que asume (si aplica, dejar vacío si se queda sin tractora):").upper().strip()
-    estado_tractora = st.selectbox("Nuevo estado de la tractora dejada:", ["", "Disponible", "Mantenimiento", "Baja"])
+    tractora_nueva = st.text_input("Nueva tractora que asume (si aplica):").upper().strip()
+    estado_tractora = st.selectbox("Estado de la tractora que deja:", ["", "Disponible", "Mantenimiento", "Baja"])
 
     confirmar = st.button("Registrar cambio")
 
@@ -74,7 +74,7 @@ def consulta_matriculas():
 
         if tractora_nueva:
             tractoras_df.loc[tractoras_df["Matrícula"] == tractora_nueva, "Chofer asignado"] = chofer
-            tractoras_df.loc[tractoras_df["Matrícula"] == tractora_nueva, "Remolque asignado"] = remolque_nuevo
+            tractoras_df.loc[tractoras_df["Matrícula"] == tractora_nueva, "Remolque asignado"] = remolque_nuevo or remolque_actual
             choferes_df.loc[choferes_df["Chofer"] == chofer, "Tractora asignada"] = tractora_nueva
         else:
             choferes_df.loc[choferes_df["Chofer"] == chofer, "Tractora asignada"] = ""
@@ -91,7 +91,7 @@ def consulta_matriculas():
         except:
             historial_df = pd.DataFrame(columns=["Fecha", "Evento"])
 
-        evento = f"{chofer} cambia tractora {tractora_actual or 'ninguna'} → {tractora_nueva or 'ninguna'}, remolque {remolque_actual or 'ninguno'} → {remolque_nuevo or 'ninguno'}"
+        evento = f"{chofer} deja tractora {tractora_actual or 'ninguna'} ({estado_tractora or 'sin cambio'}) y asume {tractora_nueva or 'ninguna'}, deja remolque {remolque_actual or 'ninguno'} ({estado_remolque or 'sin cambio'}) y asume {remolque_nuevo or 'ninguno'}"
         nueva_fila = pd.DataFrame({"Fecha": [datetime.now()], "Evento": [evento]})
         historial_df = pd.concat([historial_df, nueva_fila], ignore_index=True)
 
