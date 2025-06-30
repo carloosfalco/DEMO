@@ -51,7 +51,6 @@ def consulta_matriculas():
                 else:
                     tipo_remolque = "Desconocido"
             else:
-                tipo_remolque = "Desconocido"
             st.success(f"La tractora {tractora_input} la conduce {chofer} junto al remolque {remolque} ({tipo_remolque}) y su jefe de tráfico es {jefe}.")
         else:
             remolque_row = remolques_df[remolques_df["Matrícula"] == remolque_input]
