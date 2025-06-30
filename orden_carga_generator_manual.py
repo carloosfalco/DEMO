@@ -44,10 +44,14 @@ def generar_orden_carga_manual():
             fechas_carga = []
             for i in range(2):
                 st.markdown(f"#### 📍 Origen {i+1}")
-                fecha_carga_i = st.date_input(f"Fecha de carga Origen {i+1}", key=f"fecha_carga_{i}", value=date.today())
+                if i == 1:
+                    fecha_carga_i = st.date_input("Fecha de carga Origen 2", key="fecha_carga_2", value=date.today())
+                    default_origen = destino_1_val
+                else:
+                    fecha_carga_i = st.date_input("Fecha de carga Origen 1", key="fecha_carga_1", value=date.today())
+                    default_origen = ""
                 fechas_carga.append(fecha_carga_i)
 
-                default_origen = destino_1_val if i == 1 else ""
                 origen = st.text_input(f"Dirección Origen {i+1}", value=default_origen, key=f"origen_{i}")
                 hora_carga = st.text_input(f"🕒 Hora de carga Origen {i+1}", key=f"hora_carga_{i}")
                 ref_carga = st.text_area(f"🔖 Ref. de carga Origen {i+1}", key=f"ref_carga_{i}")
@@ -67,8 +71,8 @@ def generar_orden_carga_manual():
                 destinos.append((destino.strip(), fecha_descarga, hora_descarga.strip(), ref_cliente.strip(), incluir_link))
         else:
             fecha_carga_unica = st.date_input("📅 Fecha de carga", value=date.today(), key="fecha_carga_unica")
-            entregar_seguido = st.checkbox("Entregar de seguido", key="entregar_seguido")
 
+            entregar_seguido = st.checkbox("Entregar de seguido", key="entregar_seguido")
             if entregar_seguido:
                 fecha_descarga_comun = fecha_carga_unica
             else:
@@ -133,7 +137,7 @@ def generar_orden_carga_manual():
                             bloque.append(f"                     {line}")
                     if destinos[i][4]:
                         bloque.append(f"    🌐 {generar_enlace_maps(destinos[i][0])}")
-                bloques.append("\\n".join(bloque))
+                bloques.append("\n".join(bloque))
         else:
             cargas = []
             for i, (origen, hora, ref_carga, incluir_link) in enumerate(origenes):
@@ -150,7 +154,7 @@ def generar_orden_carga_manual():
                     if incluir_link:
                         cargas.append(f"    🌐 {generar_enlace_maps(origen)}")
             if cargas:
-                mensaje += f"📍 Cargas ({formatear_fecha_con_dia(fecha_carga_unica)}):\\n" + "\\n".join(cargas) + "\\n"
+                mensaje += f"📍 Cargas ({formatear_fecha_con_dia(fecha_carga_unica)}):\n" + "\n".join(cargas) + "\n"
 
             descargas = []
             for i, (destino, _, hora_descarga, ref_cliente, incluir_link) in enumerate(destinos):
@@ -167,20 +171,20 @@ def generar_orden_carga_manual():
                     if incluir_link:
                         descargas.append(f"    🌐 {generar_enlace_maps(destino)}")
             if descargas:
-                mensaje += f"\\n📍 Descargas ({formatear_fecha_con_dia(fecha_descarga_comun)}):\\n" + "\\n".join(descargas) + "\\n"
+                mensaje += f"\n📍 Descargas ({formatear_fecha_con_dia(fecha_descarga_comun)}):\n" + "\n".join(descargas) + "\n"
 
-        mensaje += "\\n\\n".join(bloques)
+        mensaje += "\n\n".join(bloques)
 
         if tipo_mercancia:
-            mensaje += f"\\n\\n📦 Tipo de mercancía: {tipo_mercancia}"
+            mensaje += f"\n\n📦 Tipo de mercancía: {tipo_mercancia}"
 
         if observaciones:
-            mensaje += f"\\n\\n📌 {observaciones}"
+            mensaje += f"\n\n📌 {observaciones}"
 
         if ida_vuelta:
-            mensaje += "\\n\\n🔁 Este es un viaje de ida y vuelta."
+            mensaje += "\n\n🔁 Este es un viaje de ida y vuelta, asegúrate de revisar bien ambas rutas."
 
-        mensaje += "\\n\\nPor favor, avisa de inmediato si surge algún problema o hay riesgo de retraso."
+        mensaje += "\n\nPor favor, avisa de inmediato si surge algún problema o hay riesgo de retraso."
 
         st.markdown("### ✉️ Orden generada:")
         st.code(mensaje.strip(), language="markdown")
