@@ -58,7 +58,7 @@ def consulta_matriculas():
             if not remolque_row.empty:
                 chofer = remolque_row.iloc[0]["Chofer asignado"]
                 tractora = remolque_row.iloc[0]["Tractora asignada"]
-                tipo = remolque_row.iloc[0]["tipo"]
+                tipo = remolque_row["tipo"].values[0] if "tipo" in remolque_row.columns else "Desconocido"
                 jefe = choferes_df[choferes_df["Chofer"] == chofer]["Jefe de tráfico"].values[0] if chofer in choferes_df["Chofer"].values else "Desconocido"
                 st.success(f"El remolque {remolque_input} (tipo {tipo}) está asignado a {chofer}, que conduce la tractora {tractora} bajo la supervisión de {jefe}.")
             else:
