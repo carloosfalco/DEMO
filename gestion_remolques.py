@@ -65,7 +65,7 @@ def gestion_remolques():
     filtro_matricula_global = st.text_input("🔎 Buscar matrícula", key="filtro_global").strip().upper()
     columnas = st.columns(3)
     estados = ["disponible", "mantenimiento", "asignado"]
-    titulos = ["🟢 Disponibles", "🛠 En mantenimiento", "🚚 Asignados"]
+    titulos = ["🟢 Disponibles", "🚰 En mantenimiento", "🚚 Asignados"]
 
     if "asignando" not in st.session_state:
         st.session_state.asignando = None
@@ -162,7 +162,7 @@ def gestion_remolques():
                             remolques.loc[remolques['matricula'] == row['matricula'], ["estado", "parking"]] = ["disponible", parking_reparado.strip()]
                             registrar_movimiento(row['matricula'], "Fin mantenimiento", row.get("tipo", ""), observaciones=f"Queda en {parking_reparado.strip()}")
                             guardar_tabla("remolques", remolques)
-                            st.success(f"🛠 {row['matricula']} reparado y ubicado en {parking_reparado.strip()}")
+                            st.success(f"🚰 {row['matricula']} reparado y ubicado en {parking_reparado.strip()}")
                             st.stop()
                         else:
                             st.warning("Debes indicar el parking donde queda el remolque.")
@@ -174,6 +174,7 @@ def gestion_remolques():
         tipo_detectado = subtipos[subtipos["matricula"].str.strip().str.upper() == matricula]["subtipo"].values
         tipo = tipo_detectado[0] if len(tipo_detectado) > 0 else st.selectbox("Tipo de vehículo", ["LONA", "FRIGO MONO", "FRIGO MULTI", "ASTILLERA", "PORTABOBINAS"])
         mantenimiento = st.text_input("Descripción del mantenimiento")
+        observaciones = st.text_input("Observaciones")
         fecha = st.date_input("Fecha de entrada")
         taller = st.text_input("Taller")
 
@@ -182,7 +183,7 @@ def gestion_remolques():
             if matricula in remolques["matricula"].values:
                 remolques = remolques[remolques["matricula"] != matricula]
             remolques = pd.concat([remolques, nuevo], ignore_index=True)
-            registrar_movimiento(matricula, "Entrada a mantenimiento", tipo, taller, mantenimiento)
+            registrar_movimiento(matricula, "Entrada a mantenimiento", tipo, taller, f"{mantenimiento}. {observaciones}")
             guardar_tabla("remolques", remolques)
             st.success(f"Remolque {matricula} registrado en mantenimiento.")
 
