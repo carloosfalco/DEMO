@@ -46,10 +46,13 @@ def consulta_matriculas():
             jefe = choferes_df[choferes_df["Chofer"] == chofer]["Jefe de tráfico"].values[0] if chofer in choferes_df["Chofer"].values else "Desconocido"
             if remolque and remolque in remolques_df["Matrícula"].values:
                 fila = remolques_df[remolques_df["Matrícula"] == remolque]
-                tipo_remolque = fila["tipo"].values[0] if "tipo" in fila.columns else "Desconocido"
+                if not fila.empty and "tipo" in fila.columns:
+                    tipo_remolque = fila.iloc[0]["tipo"]
+                else:
+                    tipo_remolque = "Desconocido"
             else:
                 tipo_remolque = "Desconocido"
-            st.success(f"La tractora {tractora_input} la conduce {chofer} junto al remolque {remolque} (tipo {tipo_remolque}) y su jefe de tráfico es {jefe}.")
+            st.success(f"La tractora {tractora_input} la conduce {chofer} junto al remolque {remolque} ({tipo_remolque}) y su jefe de tráfico es {jefe}.")
         else:
             remolque_row = remolques_df[remolques_df["Matrícula"] == remolque_input]
             if not remolque_row.empty:
