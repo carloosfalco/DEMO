@@ -1,188 +1,148 @@
 import streamlit as st
-from datetime import date
-import urllib.parse
+import pandas as pd
+from datetime import datetime
+import re
 
-DIAS_SEMANA_ES = {
-    'Monday': 'Lunes', 'Tuesday': 'Martes', 'Wednesday': 'Miércoles',
-    'Thursday': 'Jueves', 'Friday': 'Viernes', 'Saturday': 'Sábado', 'Sunday': 'Domingo'
-}
+def normalizar_tractora(input_txt, df):
+    input_txt = input_txt.upper().strip()
+    if input_txt in df["Matrícula"].values:
+        return input_txt
+    posibles = df[df["Matrícula"].str.startswith(input_txt)]
+    if not posibles.empty:
+        return posibles.iloc[0]["Matrícula"]
+    return input_txt
 
-def formatear_fecha_con_dia(fecha):
-    dia_en = fecha.strftime('%A')
-    dia_es = DIAS_SEMANA_ES.get(dia_en, dia_en)
-    return f"{dia_es} {fecha.strftime('%d/%m')}"
+def normalizar_remolque(input_txt, df):
+    input_txt = input_txt.upper().strip()
+    if input_txt in df["Matrícula"].values:
+        return input_txt
+    posibles = df[df["Matrícula"].str.startswith(input_txt)]
+    if not posibles.empty:
+        return posibles.iloc[0]["Matrícula"]
+    return input_txt
 
-def generar_enlace_maps(ubicacion):
-    query = urllib.parse.quote_plus(ubicacion)
-    return f"https://www.google.com/maps/search/?api=1&query={query}"
+def consulta_matriculas():
+    st.title("🔍 Consulta de matrículas")
 
-def generar_orden_carga_manual():
-    st.title("📦 Generador de Orden de Carga")
-    st.markdown("Completa los siguientes datos para generar una orden.")
+    @st.cache_data
+    def load_data():
+        choferes = pd.read_excel("base_datos_MAKE_Virosque.xlsx", sheet_name="Chóferes")
+        remolques = pd.read_excel("base_datos_MAKE_Virosque.xlsx", sheet_name="Remolques")
+        tractoras = pd.read_excel("base_datos_MAKE_Virosque.xlsx", sheet_name="Tractoras")
+        return choferes, remolques, tractoras
 
-    ida_vuelta = st.toggle("↔️ Ida y vuelta", value=st.session_state.get("ida_vuelta", False))
-    st.session_state.ida_vuelta = ida_vuelta
+    choferes_df, remolques_df, tractoras_df = load_data()
 
-    if ida_vuelta:
-        num_origenes = 2
-        num_destinos = 2
-    else:
-        num_origenes = st.number_input("Número de ubicaciones de carga", min_value=1, max_value=5,
-                                       value=st.session_state.get("num_origenes", 1), key="num_origenes_input")
-        num_destinos = st.number_input("Número de ubicaciones de descarga", min_value=1, max_value=5,
-                                       value=st.session_state.get("num_destinos", 1), key="num_destinos_input")
+    matricula_input = st.text_input("Introduce una matrícula de tractora o remolque:").upper().strip()
 
-    with st.form("orden_form"):
-        chofer = st.text_input("Nombre del chofer", key="chofer")
-        ref_interna = st.text_input("🔐 Referencia interna", key="ref_interna")
-        incluir_todos_links = st.checkbox("Incluir enlaces de Google Maps para todas las ubicaciones", key="incluir_todos_links")
+    if matricula_input:
+        tractora_input = normalizar_tractora(matricula_input, tractoras_df)
+        remolque_input = normalizar_remolque(matricula_input, remolques_df)
 
-        origenes, destinos = [], []
-        destino_1_val = ""
-
-        if ida_vuelta:
-            from datetime import timedelta
-            fechas_carga = []
-            for i in range(2):
-                st.markdown(f"#### 📍 Origen {i+1}")
-                if i == 1:
-                    fecha_carga_i = st.date_input("Fecha de carga Origen 2", key="fecha_carga_2", value=date.today())
-                    default_origen = destino_1_val
+        tractora_row = tractoras_df[tractoras_df["Matrícula"] == tractora_input]
+        if not tractora_row.empty:
+            chofer = tractora_row.iloc[0]["Chofer asignado"]
+            remolque = tractora_row.iloc[0]["Remolque asignado"]
+            jefe = choferes_df[choferes_df["Chofer"] == chofer]["Jefe de tráfico"].values[0] if chofer in choferes_df["Chofer"].values else "Desconocido"
+            if remolque and remolque in remolques_df["Matrícula"].values:
+                fila = remolques_df[remolques_df["Matrícula"] == remolque]
+                if not fila.empty and "tipo" in fila.columns:
+                    tipo_remolque = fila.iloc[0]["Tipo"]
                 else:
-                    fecha_carga_i = st.date_input("Fecha de carga Origen 1", key="fecha_carga_1", value=date.today())
-                    default_origen = ""
-                fechas_carga.append(fecha_carga_i)
-
-                origen = st.text_input(f"Dirección Origen {i+1}", value=default_origen, key=f"origen_{i}")
-                hora_carga = st.text_input(f"🕒 Hora de carga Origen {i+1}", key=f"hora_carga_{i}")
-                ref_carga = st.text_area(f"🔖 Ref. de carga Origen {i+1}", key=f"ref_carga_{i}")
-                _incluir_link = st.checkbox("Incluir enlace Maps", value=incluir_todos_links, key=f"link_origen_{i}")
-                incluir_link = incluir_todos_links or _incluir_link
-                origenes.append((origen.strip(), hora_carga.strip(), ref_carga.strip(), incluir_link))
-
-                st.markdown(f"#### 📍 Destino {i+1}")
-                destino = st.text_input(f"Dirección Destino {i+1}", key=f"destino_{i}")
-                if i == 0:
-                    destino_1_val = destino
-                fecha_descarga = st.date_input(f"Fecha de descarga Destino {i+1}", value=date.today(), key=f"fecha_descarga_{i}")
-                hora_descarga = st.text_input(f"🕓 Hora de descarga Destino {i+1}", key=f"hora_descarga_{i}")
-                ref_cliente = st.text_area(f"📌 Referencia cliente Destino {i+1}", key=f"ref_cliente_{i}")
-                _incluir_link = st.checkbox("Incluir enlace Maps", value=incluir_todos_links, key=f"link_destino_{i}")
-                incluir_link = incluir_todos_links or _incluir_link
-                destinos.append((destino.strip(), fecha_descarga, hora_descarga.strip(), ref_cliente.strip(), incluir_link))
+                    tipo_remolque = "Desconocido"
+            else:
+                tipo_remolque = "Desconocido"
+            st.success(f"La tractora {tractora_input} la conduce {chofer} junto al remolque {remolque} ({tipo_remolque}) y su jefe de tráfico es {jefe}.")
         else:
-            fecha_carga_unica = st.date_input("Fecha de carga", value=date.today(), key="fecha_carga_unica")
+            remolque_row = remolques_df[remolques_df["Matrícula"] == remolque_input]
+            if not remolque_row.empty:
+                chofer = remolque_row.iloc[0]["Chofer asignado"]
+                tractora = remolque_row.iloc[0]["Tractora asignada"]
+                tipo = remolque_row["Tipo"].values[0] if "tipo" in remolque_row.columns else "Desconocido"
+                jefe = choferes_df[choferes_df["Chofer"] == chofer]["Jefe de tráfico"].values[0] if chofer in choferes_df["Chofer"].values else "Desconocido"
+                st.success(f"El remolque {remolque_input} (tipo {tipo}) está asignado a {chofer}, que conduce la tractora {tractora} bajo la supervisión de {jefe}.")
+            else:
+                st.error("Matrícula no encontrada en el sistema.")
 
-            for i in range(num_origenes):
-                st.markdown(f"#### 📍 Origen {i+1}")
-                origen = st.text_input(f"Dirección Origen {i+1}", key=f"origen_{i}")
-                hora_carga = st.text_input(f"🕒 Hora de carga Origen {i+1}", key=f"hora_carga_{i}")
-                ref_carga = st.text_area(f"🔖 Ref. de carga Origen {i+1}", key=f"ref_carga_{i}")
-                _incluir_link = st.checkbox("Incluir enlace Maps", value=incluir_todos_links, key=f"link_origen_{i}")
-                incluir_link = incluir_todos_links or _incluir_link
-                origenes.append((origen.strip(), hora_carga.strip(), ref_carga.strip(), incluir_link))
+    st.divider()
+    st.title("🔁 Registro de cambios de asignación")
 
-            if num_destinos > 0:
-                fecha_descarga_comun = st.date_input("📅 Fecha de descarga", value=date.today(), key="fecha_descarga_comun")
+    st.subheader("Formulario de cambio")
+    chofer = st.selectbox("Chofer que realiza el cambio:", choferes_df["Chofer"].unique())
 
-            for i in range(num_destinos):
-                st.markdown(f"#### 📍 Destino {i+1}")
-                destino = st.text_input(f"Dirección Destino {i+1}", key=f"destino_{i}")
-                hora_descarga = st.text_input(f"🕓 Hora de descarga Destino {i+1}", key=f"hora_descarga_{i}")
-                ref_cliente = st.text_area(f"📌 Referencia cliente Destino {i+1}", key=f"ref_cliente_{i}")
-                _incluir_link = st.checkbox("Incluir enlace Maps", value=incluir_todos_links, key=f"link_destino_{i}")
-                incluir_link = incluir_todos_links or _incluir_link
-                destinos.append((destino.strip(), fecha_descarga_comun, hora_descarga.strip(), ref_cliente.strip(), incluir_link))
+    remolque_asignado = choferes_df[choferes_df["Chofer"] == chofer]["Remolque asignado"].values[0]
+    tractora_asignada = choferes_df[choferes_df["Chofer"] == chofer]["Tractora asignada"].values[0]
 
-        tipo_mercancia = st.text_input("📦 Tipo de mercancía (opcional)", key="tipo_mercancia").strip()
-        observaciones = st.text_area("📜 Observaciones (opcional)", key="observaciones").strip()
-        submitted = st.form_submit_button("Generar orden")
+    cambiar_remolque = st.checkbox("Modificar remolque")
+    if cambiar_remolque:
+        st.markdown("**Remolque**")
+        remolque_actual = st.text_input("Remolque que deja (si aplica):", value=remolque_asignado).upper().strip()
+        remolque_actual = normalizar_remolque(remolque_actual, remolques_df)
+        estado_remolque = st.selectbox("Estado del remolque que deja:", ["", "Disponible", "Mantenimiento", "Baja"])
+        remolque_nuevo = st.text_input("Nuevo remolque que asume (si aplica):").upper().strip()
+        remolque_nuevo = normalizar_remolque(remolque_nuevo, remolques_df)
+    else:
+        remolque_actual = remolque_nuevo = estado_remolque = None
 
-    if submitted:
-        mensaje = f"Hola {chofer}," if chofer else "Hola,"
-        mensaje += f" esta es la orden de carga:\n\n"
-        if ref_interna:
-            mensaje += f"🔐 Ref. interna: {ref_interna}\n\n"
+    cambiar_tractora = st.checkbox("Modificar tractora")
+    if cambiar_tractora:
+        st.markdown("**Tractora**")
+        tractora_actual = st.text_input("Tractora que deja (si aplica):", value=tractora_asignada).upper().strip()
+        tractora_actual = normalizar_tractora(tractora_actual, tractoras_df)
+        estado_tractora = st.selectbox("Estado de la tractora que deja:", ["", "Disponible", "Mantenimiento", "Baja"])
+        tractora_nueva = st.text_input("Nueva tractora que asume (si aplica):").upper().strip()
+        tractora_nueva = normalizar_tractora(tractora_nueva, tractoras_df)
+    else:
+        tractora_actual = tractora_nueva = estado_tractora = None
 
-        bloques = []
-        if ida_vuelta:
-            for i in range(2):
-                bloque = []
-                if origenes[i][0]:
-                    bloque.append(f"📍 Carga {i+1} ({formatear_fecha_con_dia(fechas_carga[i])}):")
-                    linea = f"  - *{origenes[i][0]}*"
-                    if origenes[i][1]:
-                        linea += f" ({origenes[i][1]}h)"
-                    bloque.append(linea)
-                    if origenes[i][2]:
-                        ref_lines = origenes[i][2].splitlines()
-                        bloque.append(f"    Ref. carga: {ref_lines[0]}")
-                        for line in ref_lines[1:]:
-                            bloque.append(f"                   {line}")
-                    if origenes[i][3]:
-                        bloque.append(f"    🌐 {generar_enlace_maps(origenes[i][0])}")
+    confirmar = st.button("Registrar cambio")
 
-                if destinos[i][0]:
-                    bloque.append(f"📍 Descarga {i+1} ({formatear_fecha_con_dia(destinos[i][1])}):")
-                    linea = f"  - *{destinos[i][0]}*"
-                    if destinos[i][2]:
-                        linea += f" ({destinos[i][2]}h)"
-                    bloque.append(linea)
-                    if destinos[i][3]:
-                        ref_lines = destinos[i][3].splitlines()
-                        bloque.append(f"    Ref. cliente: {ref_lines[0]}")
-                        for line in ref_lines[1:]:
-                            bloque.append(f"                     {line}")
-                    if destinos[i][4]:
-                        bloque.append(f"    🌐 {generar_enlace_maps(destinos[i][0])}")
-                bloques.append("\n".join(bloque))
-        else:
-            cargas = []
-            for i, (origen, hora, ref_carga, incluir_link) in enumerate(origenes):
-                if origen:
-                    linea = f"  - *{origen}*"
-                    if hora:
-                        linea += f" ({hora}h)"
-                    cargas.append(linea)
-                    if ref_carga:
-                        ref_lines = ref_carga.splitlines()
-                        cargas.append(f"    Ref. carga: {ref_lines[0]}")
-                        for line in ref_lines[1:]:
-                            cargas.append(f"                   {line}")
-                    if incluir_link:
-                        cargas.append(f"    🌐 {generar_enlace_maps(origen)}")
-            if cargas:
-                mensaje += f"📍 Cargas ({formatear_fecha_con_dia(fecha_carga_unica)}):\n" + "\n".join(cargas) + "\n"
+    if confirmar:
+        if cambiar_remolque and remolque_actual:
+            remolques_df.loc[remolques_df["Matrícula"] == remolque_actual, ["Chofer asignado", "Tractora asignada"]] = ["", ""]
+            if estado_remolque:
+                remolques_df.loc[remolques_df["Matrícula"] == remolque_actual, "Estado"] = estado_remolque
+        if cambiar_remolque and remolque_nuevo:
+            remolques_df.loc[remolques_df["Matrícula"] == remolque_nuevo, "Chofer asignado"] = chofer
+            remolques_df.loc[remolques_df["Matrícula"] == remolque_nuevo, "Tractora asignada"] = tractora_nueva or tractora_asignada
+            choferes_df.loc[choferes_df["Chofer"] == chofer, "Remolque asignado"] = remolque_nuevo
 
-            descargas = []
-            for i, (destino, _, hora_descarga, ref_cliente, incluir_link) in enumerate(destinos):
-                if destino:
-                    linea = f"  - *{destino}*"
-                    if hora_descarga:
-                        linea += f" ({hora_descarga}h)"
-                    descargas.append(linea)
-                    if ref_cliente:
-                        ref_lines = ref_cliente.splitlines()
-                        descargas.append(f"    Ref. cliente: {ref_lines[0]}")
-                        for line in ref_lines[1:]:
-                            descargas.append(f"                     {line}")
-                    if incluir_link:
-                        descargas.append(f"    🌐 {generar_enlace_maps(destino)}")
-            if descargas:
-                mensaje += f"\n📍 Descargas ({formatear_fecha_con_dia(fecha_descarga_comun)}):\n" + "\n".join(descargas) + "\n"
+        if cambiar_tractora and tractora_actual:
+            tractoras_df.loc[tractoras_df["Matrícula"] == tractora_actual, ["Remolque asignado", "Chofer asignado"]] = ["", ""]
+            if estado_tractora:
+                tractoras_df.loc[tractoras_df["Matrícula"] == tractora_actual, "Estado"] = estado_tractora
+        if cambiar_tractora and tractora_nueva:
+            tractoras_df.loc[tractoras_df["Matrícula"] == tractora_nueva, "Chofer asignado"] = chofer
+            tractoras_df.loc[tractoras_df["Matrícula"] == tractora_nueva, "Remolque asignado"] = remolque_nuevo or remolque_asignado
+            choferes_df.loc[choferes_df["Chofer"] == chofer, "Tractora asignada"] = tractora_nueva
 
-        mensaje += "\n\n".join(bloques)
+        if cambiar_tractora and not tractora_nueva:
+            choferes_df.loc[choferes_df["Chofer"] == chofer, "Tractora asignada"] = ""
 
-        if tipo_mercancia:
-            mensaje += f"\n\n📦 Tipo de mercancía: {tipo_mercancia}"
+        with pd.ExcelWriter("base_datos_MAKE_Virosque.xlsx", engine="openpyxl", mode="a", if_sheet_exists="overlay") as writer:
+            choferes_df.to_excel(writer, sheet_name="Chóferes", index=False)
+            remolques_df.to_excel(writer, sheet_name="Remolques", index=False)
+            tractoras_df.to_excel(writer, sheet_name="Tractoras", index=False)
 
-        if observaciones:
-            mensaje += f"\n\n📌 {observaciones}"
+        try:
+            historial_df = pd.read_excel("base_datos_MAKE_Virosque.xlsx", sheet_name="Historial")
+        except:
+            historial_df = pd.DataFrame(columns=["Fecha", "Evento"])
 
-        if ida_vuelta:
-            mensaje += "\n\n🔁 Este es un viaje de ida y vuelta."
+        evento = f"{chofer} deja tractora {tractora_actual or 'ninguna'} ({estado_tractora or 'sin cambio'}) y asume {tractora_nueva or 'ninguna'}, deja remolque {remolque_actual or 'ninguno'} ({estado_remolque or 'sin cambio'}) y asume {remolque_nuevo or 'ninguno'}"
+        nueva_fila = pd.DataFrame({"Fecha": [datetime.now()], "Evento": [evento]})
+        historial_df = pd.concat([historial_df, nueva_fila], ignore_index=True)
 
-        mensaje += "\n\nPor favor, avisa de inmediato si surge algún problema o hay riesgo de retraso."
+        with pd.ExcelWriter("base_datos_MAKE_Virosque.xlsx", engine="openpyxl", mode="a", if_sheet_exists="overlay") as writer:
+            historial_df.to_excel(writer, sheet_name="Historial", index=False)
 
-        st.markdown("### ✉️ Orden generada:")
-        st.code(mensaje.strip(), language="markdown")
+        st.success("✅ Cambio registrado y guardado correctamente.")
+
+    st.divider()
+    st.subheader("📤 Exportar historial de cambios")
+    try:
+        historial_df = pd.read_excel("base_datos_MAKE_Virosque.xlsx", sheet_name="Historial")
+        csv = historial_df.to_csv(index=False).encode('utf-8')
+        st.download_button("📥 Descargar historial en CSV", data=csv, file_name="historial_cambios.csv", mime="text/csv")
+    except:
+        st.info("No se ha encontrado ningún historial para exportar.")
