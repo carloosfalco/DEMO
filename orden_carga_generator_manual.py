@@ -178,7 +178,7 @@ def generar_orden_carga_manual():
             mensaje += f"\n\n📌 {observaciones}"
 
         if ida_vuelta:
-            mensaje += "\n\n🔁 Este es un viaje de ida y vuelta, asegúrate de revisar bien ambas rutas."
+            mensaje += "\n\n🔁 Este es un viaje de ida y vuelta"
 
         if not ida_vuelta and st.session_state.entregar_seguido:
             mensaje += "\n\n🚛 Entrega de seguido (fecha de descarga igual a la de carga)."
