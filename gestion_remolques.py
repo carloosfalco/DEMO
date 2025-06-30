@@ -167,4 +167,43 @@ def gestion_remolques():
                         else:
                             st.warning("Debes indicar el parking donde queda el remolque.")
 
-    # ... resto del código permanece igual ...
+    st.divider()
+
+    with st.expander("➕ Registrar nuevo movimiento", expanded=False):
+        matricula = st.text_input("Matrícula").strip().upper()
+        tipo_detectado = subtipos[subtipos["matricula"].str.strip().str.upper() == matricula]["subtipo"].values
+        tipo = tipo_detectado[0] if len(tipo_detectado) > 0 else st.selectbox("Tipo de vehículo", ["LONA", "FRIGO MONO", "FRIGO MULTI", "ASTILLERA", "PORTABOBINAS"])
+        mantenimiento = st.text_input("Descripción del mantenimiento")
+        fecha = st.date_input("Fecha de entrada")
+        taller = st.text_input("Taller")
+
+        if st.button("Registrar en mantenimiento"):
+            nuevo = pd.DataFrame([{ "matricula": matricula, "tipo": tipo, "taller": taller, "fecha": fecha.strftime('%Y-%m-%d'), "parking": "", "estado": "mantenimiento" }])
+            if matricula in remolques["matricula"].values:
+                remolques = remolques[remolques["matricula"] != matricula]
+            remolques = pd.concat([remolques, nuevo], ignore_index=True)
+            registrar_movimiento(matricula, "Entrada a mantenimiento", tipo, taller, mantenimiento)
+            guardar_tabla("remolques", remolques)
+            st.success(f"Remolque {matricula} registrado en mantenimiento.")
+
+    st.divider()
+    with st.expander("📁 Exportar historial"):
+        movimientos = cargar_tabla("movimientos")
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
+            movimientos.to_excel(writer, index=False, sheet_name="Historial")
+        output.seek(0)
+        st.download_button("📄 Descargar historial", data=output, file_name="historial_remolques.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+        st.markdown("---")
+        st.markdown("#### 🗑 Borrar historial de movimientos")
+        pwd = st.text_input("Introduce la contraseña para borrar el historial", type="password")
+
+        CONTRASENA = os.getenv("REMOLQUES_PASSWORD") or st.secrets.get("REMOLQUES_PASSWORD")
+
+        if st.button("Borrar historial"):
+            if pwd == CONTRASENA:
+                guardar_tabla("movimientos", pd.DataFrame(columns=["fecha_hora", "matricula", "accion", "tipo", "taller", "observaciones"]))
+                st.success("✅ Historial de movimientos eliminado correctamente.")
+            else:
+                st.error("❌ Contraseña incorrecta. No se ha eliminado el historial.")
