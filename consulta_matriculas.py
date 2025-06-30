@@ -45,12 +45,14 @@ def consulta_matriculas():
     estado_remolque = st.selectbox("Nuevo estado del remolque dejado:", ["Disponible", "Mantenimiento", "Baja", ""])
     remolque_nuevo = st.text_input("Nuevo remolque que asume (si aplica):").upper().strip()
     tractora_actual = choferes_df[choferes_df["Chofer"] == chofer]["Tractora asignada"].values[0]
+    tractora_nueva = st.text_input("Nueva tractora que asume (si aplica, dejar vacío si se queda sin tractora):").upper().strip()
 
     confirmar = st.button("Registrar cambio")
 
     if confirmar:
         # Actualizar en Choferes
         choferes_df.loc[choferes_df["Chofer"] == chofer, "Remolque asignado"] = remolque_nuevo
+        choferes_df.loc[choferes_df["Chofer"] == chofer, "Tractora asignada"] = tractora_nueva
 
         # Actualizar en Remolques: el anterior
         if remolque_actual in remolques_df["Matrícula"].values:
@@ -60,10 +62,16 @@ def consulta_matriculas():
         # Actualizar en Remolques: el nuevo
         if remolque_nuevo in remolques_df["Matrícula"].values:
             remolques_df.loc[remolques_df["Matrícula"] == remolque_nuevo, "Chofer asignado"] = chofer
-            remolques_df.loc[remolques_df["Matrícula"] == remolque_nuevo, "Tractora asignada"] = tractora_actual
+            remolques_df.loc[remolques_df["Matrícula"] == remolque_nuevo, "Tractora asignada"] = tractora_nueva
 
-        # Actualizar en Tractoras
-        tractoras_df.loc[tractoras_df["Matrícula"] == tractora_actual, "Remolque asignado"] = remolque_nuevo
+        # Desvincular tractora anterior si cambia o se queda sin tractora
+        if tractora_actual:
+            tractoras_df.loc[tractoras_df["Matrícula"] == tractora_actual, ["Remolque asignado", "Chofer asignado"]] = ["", ""]
+
+        # Asignar nueva tractora si hay
+        if tractora_nueva:
+            tractoras_df.loc[tractoras_df["Matrícula"] == tractora_nueva, "Remolque asignado"] = remolque_nuevo
+            tractoras_df.loc[tractoras_df["Matrícula"] == tractora_nueva, "Chofer asignado"] = chofer
 
         # Guardar los cambios en Excel
         with pd.ExcelWriter("base_datos_MAKE_Virosque.xlsx", engine="openpyxl", mode="a", if_sheet_exists="overlay") as writer:
@@ -77,7 +85,7 @@ def consulta_matriculas():
         except:
             historial_df = pd.DataFrame(columns=["Fecha", "Evento"])
 
-        evento = f"{chofer} deja {remolque_actual} (→ {estado_remolque}) y asume {remolque_nuevo}"
+        evento = f"{chofer} deja remolque {remolque_actual} (→ {estado_remolque}), asume remolque {remolque_nuevo} y tractora {tractora_nueva or 'ninguna'}"
         nueva_fila = pd.DataFrame({"Fecha": [datetime.now()], "Evento": [evento]})
         historial_df = pd.concat([historial_df, nueva_fila], ignore_index=True)
 
