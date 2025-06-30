@@ -23,10 +23,8 @@ def generar_orden_carga_manual():
     ida_vuelta = st.toggle("↔️ Ida y vuelta", value=st.session_state.get("ida_vuelta", False))
     st.session_state.ida_vuelta = ida_vuelta
 
-    entregar_de_seguido = False
     if not ida_vuelta:
         entregar_de_seguido = st.checkbox("📌 Entregar de seguido", key="entregar_seguido")
-        st.session_state.entregar_seguido = entregar_de_seguido
 
     if ida_vuelta:
         num_origenes = 2
@@ -52,7 +50,6 @@ def generar_orden_carga_manual():
                 fecha_carga_i = st.date_input(f"Fecha de carga Origen {i+1}", key=f"fecha_carga_{i}", value=date.today())
                 fechas_carga.append(fecha_carga_i)
                 default_origen = destino_1_val if i == 1 else ""
-
                 origen = st.text_input(f"Dirección Origen {i+1}", value=default_origen, key=f"origen_{i}")
                 hora_carga = st.text_input(f"🕒 Hora de carga Origen {i+1}", key=f"hora_carga_{i}")
                 ref_carga = st.text_area(f"🔖 Ref. de carga Origen {i+1}", key=f"ref_carga_{i}")
@@ -72,7 +69,7 @@ def generar_orden_carga_manual():
                 destinos.append((destino.strip(), fecha_descarga, hora_descarga.strip(), ref_cliente.strip(), incluir_link))
         else:
             fecha_carga_unica = st.date_input("Fecha de carga", value=date.today(), key="fecha_carga_unica")
-            if entregar_de_seguido:
+            if st.session_state.entregar_seguido:
                 fecha_descarga_comun = fecha_carga_unica
             else:
                 fecha_descarga_comun = st.date_input("📅 Fecha de descarga", value=fecha_carga_unica + timedelta(days=1), key="fecha_descarga_comun")
@@ -172,9 +169,6 @@ def generar_orden_carga_manual():
             if descargas:
                 mensaje += f"\n📍 Descargas ({formatear_fecha_con_dia(fecha_descarga_comun)}):\n" + "\n".join(descargas) + "\n"
 
-            if entregar_de_seguido:
-                mensaje += "\n✅ Entrega de seguido: la descarga se realiza el mismo día que la carga."
-
         mensaje += "\n\n".join(bloques)
 
         if tipo_mercancia:
@@ -184,7 +178,10 @@ def generar_orden_carga_manual():
             mensaje += f"\n\n📌 {observaciones}"
 
         if ida_vuelta:
-            mensaje += "\n\n🔁 Este es un viaje de ida y vuelta."
+            mensaje += "\n\n🔁 Este es un viaje de ida y vuelta, asegúrate de revisar bien ambas rutas."
+
+        if not ida_vuelta and st.session_state.entregar_seguido:
+            mensaje += "\n\n🚛 Entrega de seguido (fecha de descarga igual a la de carga)."
 
         mensaje += "\n\nPor favor, avisa de inmediato si surge algún problema o hay riesgo de retraso."
 
