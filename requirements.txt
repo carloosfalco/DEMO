@@ -12,3 +12,4 @@ transformers
 streamlit-calendar
 XlsxWriter
 python-dotenv
+pyairtable
