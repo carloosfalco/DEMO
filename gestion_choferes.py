@@ -6,7 +6,7 @@ def gestion_choferes():
     st.markdown("Visualiza y filtra los chóferes registrados desde el archivo CSV local.")
 
     try:
-        df = pd.read_csv("choferes_limpio.csv")
+        df = pd.read_csv("choferes.csv")
 
         # Filtros superiores
         col1, col2, col3 = st.columns(3)
