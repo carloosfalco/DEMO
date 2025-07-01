@@ -22,7 +22,14 @@ def gestion_choferes():
         formula = match({"Chofer": search_name})
         records = table.all(formula=formula)
     else:
+    try:
         records = table.all()
+        st.success(f"✅ Se han recibido {len(records)} registros.")
+    except Exception as e:
+        st.error("❌ Error al obtener los registros de Airtable.")
+        st.exception(e)
+        return
+
 
     # --- Mostrar resultados ---
     if not records:
