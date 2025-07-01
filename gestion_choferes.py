@@ -1,40 +1,33 @@
 import streamlit as st
 import pandas as pd
-import os
-
-CSV_FILE = "choferes.csv"
 
 def gestion_choferes():
-    st.title("🚚 Gestión de Chóferes – desde CSV")
+    st.title("🧑‍✈️ Gestión de chóferes")
+    st.markdown("Visualiza y filtra los chóferes registrados desde el archivo CSV local.")
 
-    # Cargar datos
-    if not os.path.exists(CSV_FILE):
-        st.error(f"No se encuentra el archivo {CSV_FILE}")
-        return
+    try:
+        df = pd.read_csv("choferes_limpio.csv")
 
-    df = pd.read_csv(CSV_FILE)
-    df = df.dropna(how="all")
+        # Filtros superiores
+        col1, col2, col3 = st.columns(3)
+        jefe_filtrado = col1.selectbox("👨‍💼 Jefe de tráfico", ["Todos"] + sorted(df["Jefe de tráfico"].dropna().unique().tolist()))
+        tipo_filtrado = col2.selectbox("🚛 Tipo", ["Todos"] + sorted(df["Tipo"].dropna().unique().tolist()))
+        marca_filtrada = col3.selectbox("🚚 Marca Tractora", ["Todos"] + sorted(df["Marca Tractora"].dropna().unique().tolist()))
 
-    search = st.text_input("🔍 Buscar por nombre de chófer:")
-    if search:
-        df_filtered = df[df["Chofer"].str.contains(search, case=False, na=False)]
-    else:
-        df_filtered = df.copy()
+        # Aplicar filtros
+        df_filtrado = df.copy()
+        if jefe_filtrado != "Todos":
+            df_filtrado = df_filtrado[df_filtrado["Jefe de tráfico"] == jefe_filtrado]
+        if tipo_filtrado != "Todos":
+            df_filtrado = df_filtrado[df_filtrado["Tipo"] == tipo_filtrado]
+        if marca_filtrada != "Todos":
+            df_filtrado = df_filtrado[df_filtrado["Marca Tractora"] == marca_filtrada]
 
-    if df_filtered.empty:
-        st.warning("No se encontraron registros.")
-    else:
-        for i, row in df_filtered.iterrows():
-            st.markdown("---")
-            st.subheader(f"👤 {row['Chofer']}")
+        st.markdown(f"**{len(df_filtrado)} chóferes encontrados.**")
 
-            tractora = st.text_input("🚛 Matrícula tractora", value=row["Matr Tractora"], key=f"tractora_{i}")
-            remolque = st.text_input("🛻 Matrícula remolque", value=row["Matr Remolque"], key=f"remolque_{i}")
-            estado = st.text_input("📍 Estado", value=row["ESTADO"], key=f"estado_{i}")
+        st.dataframe(df_filtrado, use_container_width=True)
 
-            if st.button("💾 Guardar cambios", key=f"guardar_{i}"):
-                df.at[i, "Matr Tractora"] = tractora
-                df.at[i, "Matr Remolque"] = remolque
-                df.at[i, "ESTADO"] = estado
-                df.to_csv(CSV_FILE, index=False)
-                st.success("✅ Registro actualizado correctamente.")
+    except FileNotFoundError:
+        st.error("❌ No se encuentra el archivo 'choferes_limpio.csv'. Por favor, súbelo o verifica su ruta.")
+    except Exception as e:
+        st.error(f"❌ Error inesperado: {e}")
