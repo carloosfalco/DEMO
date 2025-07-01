@@ -1,69 +1,38 @@
-# gestion_choferes.py
+# gestion_choferes_google.py
 
 import streamlit as st
-from pyairtable import Table
-from pyairtable.formulas import match
+from streamlit_gsheets import GSheetsConnection
+import pandas as pd
 
 def gestion_choferes():
-    st.title("🚚 Gestión de Chóferes – Fleet and Route Management")
+    st.title("🚚 Gestión de Chóferes – con Google Sheets")
 
-    # --- Configuración segura ---
-    try:
-        AIRTABLE_TOKEN = st.secrets["AIRTABLE_TOKEN"]
-    except KeyError:
-        st.error("❌ No se encontró el token en st.secrets. Asegúrate de configurar correctamente secrets.toml.")
-        return
+    # Conectar con Google Sheets
+    conn = st.connection("gsheets", type=GSheetsConnection)
 
-    BASE_ID = "appxhB5R5nco0MZpT"
-    TABLE_NAME = "Fleet and Route Management"
+    # Leer datos
+    df = conn.read(worksheet="TABLA COMPLETA", usecols=list(range(6)))  # Ajusta columnas si tienes más
+    df = df.dropna(how="all")  # Eliminar filas vacías
 
-    # --- Conexión a Airtable ---
-    try:
-        table = Table(AIRTABLE_TOKEN, BASE_ID, TABLE_NAME)
-    except Exception as e:
-        st.error("❌ Error al conectar con la tabla de Airtable.")
-        st.exception(e)
-        return
+    # Buscador por chófer
+    search = st.text_input("🔍 Buscar por nombre de chófer:")
+    if search:
+        df = df[df["Chofer"].str.contains(search, case=False, na=False)]
 
-    # --- Buscador por nombre ---
-    search_name = st.text_input("🔍 Buscar por nombre de chófer:")
-
-    try:
-        if search_name:
-            formula = match({"Chofer": search_name})
-            records = table.all(formula=formula)
-        else:
-            records = table.all()
-        st.success(f"✅ Se han recibido {len(records)} registros.")
-    except Exception as e:
-        st.error("❌ Error al obtener los registros de Airtable.")
-        st.exception(e)
-        return
-
-    # --- Mostrar resultados ---
-    if not records:
+    if df.empty:
         st.warning("No se encontraron registros.")
     else:
-        for record in records:
-            record_id = record["id"]
-            data = record.get("fields", {})
-
+        for i, row in df.iterrows():
             st.markdown("---")
-            st.subheader(f"👤 {data.get('Chofer', 'Sin nombre')}")
+            st.subheader(f"👤 {row['Chofer']}")
 
-            tractora = st.text_input("🚛 Matrícula tractora", value=data.get("Matr Tractora", ""), key=f"tractora_{record_id}")
-            remolque = st.text_input("🛻 Matrícula remolque", value=data.get("Matr Remolque", ""), key=f"remolque_{record_id}")
-            estado = st.text_input("📍 Estado", value=data.get("ESTADO", ""), key=f"estado_{record_id}")
+            tractora = st.text_input("🚛 Matrícula tractora", value=row["Matr Tractora"], key=f"tractora_{i}")
+            remolque = st.text_input("🛻 Matrícula remolque", value=row["Matr Remolque"], key=f"remolque_{i}")
+            estado = st.text_input("📍 Estado", value=row["ESTADO"], key=f"estado_{i}")
 
-            if st.button("💾 Guardar cambios", key=f"guardar_{record_id}"):
-                updates = {
-                    "Matr Tractora": tractora,
-                    "Matr Remolque": remolque,
-                    "ESTADO": estado
-                }
-                try:
-                    table.update(record_id, updates)
-                    st.success("✅ Registro actualizado correctamente.")
-                except Exception as e:
-                    st.error("❌ No se pudo actualizar el registro.")
-                    st.exception(e)
+            if st.button("💾 Guardar cambios", key=f"guardar_{i}"):
+                df.at[i, "Matr Tractora"] = tractora
+                df.at[i, "Matr Remolque"] = remolque
+                df.at[i, "ESTADO"] = estado
+                conn.update(worksheet="TABLA COMPLETA", data=df)
+                st.success("✅ Registro actualizado correctamente.")
