@@ -6,8 +6,9 @@ from google.oauth2 import service_account
 import gspread
 
 # Conexión segura usando st.secrets
+
 def get_gsheet_connection():
-    creds_dict = st.secrets["GOOGLE_SERVICE_ACCOUNT"]
+    creds_dict = json.loads(st.secrets["GOOGLE_SERVICE_ACCOUNT"])
     credentials = service_account.Credentials.from_service_account_info(
         creds_dict,
         scopes=["https://www.googleapis.com/auth/spreadsheets"]
