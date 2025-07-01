@@ -1,7 +1,21 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+from google.oauth2 import service_account
+import gspread
 
+# Autenticación con Google Sheets
+@st.cache_resource
+def get_gsheet_connection():
+    credentials = service_account.Credentials.from_service_account_file(
+        "service_account.json",
+        scopes=["https://www.googleapis.com/auth/spreadsheets"]
+    )
+    gc = gspread.authorize(credentials)
+    sh = gc.open_by_url("https://docs.google.com/spreadsheets/d/1KL9-HYhaSaSSRFirjxPNox24dVHOBlA2Zmny4G1GTj4/edit")
+    return sh
+
+# Funciones auxiliares para normalizar matrículas
 def normalizar_matricula(input_txt, df):
     input_txt = input_txt.upper().strip()
     if input_txt in df["Matrícula"].values:
@@ -14,14 +28,11 @@ def normalizar_matricula(input_txt, df):
 def consulta_matriculas():
     st.title("🔍 Consulta de matrículas")
 
-    @st.cache_data
-    def load_data():
-        choferes = pd.read_csv("choferes.csv")
-        remolques = pd.read_csv("remolques.csv")
-        tractoras = pd.read_csv("tractoras.csv")
-        return choferes, remolques, tractoras
-
-    choferes_df, remolques_df, tractoras_df = load_data()
+    # Cargar datos
+    sh = get_gsheet_connection()
+    choferes_df = pd.DataFrame(sh.worksheet("Chóferes").get_all_records())
+    remolques_df = pd.DataFrame(sh.worksheet("Remolques").get_all_records())
+    tractoras_df = pd.DataFrame(sh.worksheet("Tractoras").get_all_records())
 
     matricula_input = st.text_input("Introduce una matrícula de tractora o remolque:").upper().strip()
 
@@ -60,10 +71,8 @@ def consulta_matriculas():
     if cambiar_remolque:
         st.markdown("**Remolque**")
         remolque_actual = st.text_input("Remolque que deja (si aplica):", value=remolque_asignado).upper().strip()
-        remolque_actual = normalizar_matricula(remolque_actual, remolques_df)
         estado_remolque = st.selectbox("Estado del remolque que deja:", ["", "Disponible", "Mantenimiento", "Baja"])
         remolque_nuevo = st.text_input("Nuevo remolque que asume (si aplica):").upper().strip()
-        remolque_nuevo = normalizar_matricula(remolque_nuevo, remolques_df)
     else:
         remolque_actual = remolque_nuevo = estado_remolque = None
 
@@ -71,61 +80,23 @@ def consulta_matriculas():
     if cambiar_tractora:
         st.markdown("**Tractora**")
         tractora_actual = st.text_input("Tractora que deja (si aplica):", value=tractora_asignada).upper().strip()
-        tractora_actual = normalizar_matricula(tractora_actual, tractoras_df)
         estado_tractora = st.selectbox("Estado de la tractora que deja:", ["", "Disponible", "Mantenimiento", "Baja"])
         tractora_nueva = st.text_input("Nueva tractora que asume (si aplica):").upper().strip()
-        tractora_nueva = normalizar_matricula(tractora_nueva, tractoras_df)
     else:
         tractora_actual = tractora_nueva = estado_tractora = None
 
     confirmar = st.button("Registrar cambio")
 
     if confirmar:
-        if cambiar_remolque and remolque_actual:
-            remolques_df.loc[remolques_df["Matrícula"] == remolque_actual, ["Chofer asignado", "Tractora asignada"]] = ["", ""]
-            if estado_remolque:
-                remolques_df.loc[remolques_df["Matrícula"] == remolque_actual, "Estado"] = estado_remolque
-        if cambiar_remolque and remolque_nuevo:
-            remolques_df.loc[remolques_df["Matrícula"] == remolque_nuevo, "Chofer asignado"] = chofer
-            remolques_df.loc[remolques_df["Matrícula"] == remolque_nuevo, "Tractora asignada"] = tractora_nueva or tractora_asignada
-            choferes_df.loc[choferes_df["Chofer"] == chofer, "Remolque asignado"] = remolque_nuevo
-
-        if cambiar_tractora and tractora_actual:
-            tractoras_df.loc[tractoras_df["Matrícula"] == tractora_actual, ["Remolque asignado", "Chofer asignado"]] = ["", ""]
-            if estado_tractora:
-                tractoras_df.loc[tractoras_df["Matrícula"] == tractora_actual, "Estado"] = estado_tractora
-        if cambiar_tractora and tractora_nueva:
-            tractoras_df.loc[tractoras_df["Matrícula"] == tractora_nueva, "Chofer asignado"] = chofer
-            tractoras_df.loc[tractoras_df["Matrícula"] == tractora_nueva, "Remolque asignado"] = remolque_nuevo or remolque_asignado
-            choferes_df.loc[choferes_df["Chofer"] == chofer, "Tractora asignada"] = tractora_nueva
-
-        if cambiar_tractora and not tractora_nueva:
-            choferes_df.loc[choferes_df["Chofer"] == chofer, "Tractora asignada"] = ""
-
-        # Guardar cambios en CSV
-        choferes_df.to_csv("choferes.csv", index=False)
-        remolques_df.to_csv("remolques.csv", index=False)
-        tractoras_df.to_csv("tractoras.csv", index=False)
-
-        # Registro en historial
         evento = f"{chofer} deja tractora {tractora_actual or 'ninguna'} ({estado_tractora or 'sin cambio'}) y asume {tractora_nueva or 'ninguna'}, deja remolque {remolque_actual or 'ninguno'} ({estado_remolque or 'sin cambio'}) y asume {remolque_nuevo or 'ninguno'}"
-        nueva_fila = pd.DataFrame({"Fecha": [datetime.now()], "Evento": [evento]})
-
-        try:
-            historial_df = pd.read_csv("historial.csv")
-        except FileNotFoundError:
-            historial_df = pd.DataFrame(columns=["Fecha", "Evento"])
-
-        historial_df = pd.concat([historial_df, nueva_fila], ignore_index=True)
-        historial_df.to_csv("historial.csv", index=False)
-
-        st.success("✅ Cambio registrado y guardado correctamente.")
+        nueva_fila = [datetime.now().strftime("%Y-%m-%d %H:%M:%S"), evento]
+        historial_ws = sh.worksheet("Historial")
+        historial_ws.append_row(nueva_fila)
+        st.success("✅ Cambio registrado correctamente en Google Sheets.")
 
     st.divider()
-    st.subheader("📤 Exportar historial de cambios")
-    try:
-        historial_df = pd.read_csv("historial.csv")
-        csv = historial_df.to_csv(index=False).encode('utf-8')
-        st.download_button("📥 Descargar historial en CSV", data=csv, file_name="historial_cambios.csv", mime="text/csv")
-    except:
-        st.info("No se ha encontrado ningún historial para exportar.")
+    st.subheader("📄 Exportar historial")
+    historial_df = pd.DataFrame(sh.worksheet("Historial").get_all_records())
+    st.dataframe(historial_df)
+    csv = historial_df.to_csv(index=False).encode('utf-8')
+    st.download_button("📅 Descargar historial en CSV", data=csv, file_name="historial_cambios.csv", mime="text/csv")
