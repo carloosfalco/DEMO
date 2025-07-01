@@ -1,18 +1,8 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-import re
 
-def normalizar_tractora(input_txt, df):
-    input_txt = input_txt.upper().strip()
-    if input_txt in df["Matrícula"].values:
-        return input_txt
-    posibles = df[df["Matrícula"].str.startswith(input_txt)]
-    if not posibles.empty:
-        return posibles.iloc[0]["Matrícula"]
-    return input_txt
-
-def normalizar_remolque(input_txt, df):
+def normalizar_matricula(input_txt, df):
     input_txt = input_txt.upper().strip()
     if input_txt in df["Matrícula"].values:
         return input_txt
@@ -26,9 +16,9 @@ def consulta_matriculas():
 
     @st.cache_data
     def load_data():
-        choferes = pd.read_excel("base_datos_Virosque.xlsx", sheet_name="Chóferes")
-        remolques = pd.read_excel("base_datos_Virosque.xlsx", sheet_name="Remolques")
-        tractoras = pd.read_excel("base_datos_Virosque.xlsx", sheet_name="Tractoras")
+        choferes = pd.read_csv("choferes.csv")
+        remolques = pd.read_csv("remolques.csv")
+        tractoras = pd.read_csv("tractoras.csv")
         return choferes, remolques, tractoras
 
     choferes_df, remolques_df, tractoras_df = load_data()
@@ -36,26 +26,22 @@ def consulta_matriculas():
     matricula_input = st.text_input("Introduce una matrícula de tractora o remolque:").upper().strip()
 
     if matricula_input:
-        tractora_input = normalizar_tractora(matricula_input, tractoras_df)
-        remolque_input = normalizar_remolque(matricula_input, remolques_df)
+        tractora_input = normalizar_matricula(matricula_input, tractoras_df)
+        remolque_input = normalizar_matricula(matricula_input, remolques_df)
 
         tractora_row = tractoras_df[tractoras_df["Matrícula"] == tractora_input]
         if not tractora_row.empty:
             chofer = tractora_row.iloc[0]["Chofer asignado"]
             remolque = tractora_row.iloc[0]["Remolque asignado"]
             jefe = choferes_df[choferes_df["Chofer"] == chofer]["Jefe de tráfico"].values[0] if chofer in choferes_df["Chofer"].values else "Desconocido"
-            if remolque and remolque in remolques_df["Matrícula"].values:
-                fila = remolques_df[remolques_df["Matrícula"] == remolque]
-                tipo_remolque = fila.iloc[0]["Tipo"] if "Tipo" in fila.columns else "Desconocido"
-            else:
-                tipo_remolque = "Desconocido"
+            tipo_remolque = remolques_df[remolques_df["Matrícula"] == remolque]["Tipo"].values[0] if remolque in remolques_df["Matrícula"].values else "Desconocido"
             st.success(f"La tractora {tractora_input} la conduce {chofer} junto al remolque {remolque} ({tipo_remolque}) y su jefe de tráfico es {jefe}.")
         else:
             remolque_row = remolques_df[remolques_df["Matrícula"] == remolque_input]
             if not remolque_row.empty:
                 chofer = remolque_row.iloc[0]["Chofer asignado"]
                 tractora = remolque_row.iloc[0]["Tractora asignada"]
-                tipo = remolque_row["Tipo"].values[0] if "tipo" in remolque_row.columns else "Desconocido"
+                tipo = remolque_row["Tipo"].values[0]
                 jefe = choferes_df[choferes_df["Chofer"] == chofer]["Jefe de tráfico"].values[0] if chofer in choferes_df["Chofer"].values else "Desconocido"
                 st.success(f"El remolque {remolque_input} (tipo {tipo}) está asignado a {chofer}, que conduce la tractora {tractora} bajo la supervisión de {jefe}.")
             else:
@@ -74,10 +60,10 @@ def consulta_matriculas():
     if cambiar_remolque:
         st.markdown("**Remolque**")
         remolque_actual = st.text_input("Remolque que deja (si aplica):", value=remolque_asignado).upper().strip()
-        remolque_actual = normalizar_remolque(remolque_actual, remolques_df)
+        remolque_actual = normalizar_matricula(remolque_actual, remolques_df)
         estado_remolque = st.selectbox("Estado del remolque que deja:", ["", "Disponible", "Mantenimiento", "Baja"])
         remolque_nuevo = st.text_input("Nuevo remolque que asume (si aplica):").upper().strip()
-        remolque_nuevo = normalizar_remolque(remolque_nuevo, remolques_df)
+        remolque_nuevo = normalizar_matricula(remolque_nuevo, remolques_df)
     else:
         remolque_actual = remolque_nuevo = estado_remolque = None
 
@@ -85,10 +71,10 @@ def consulta_matriculas():
     if cambiar_tractora:
         st.markdown("**Tractora**")
         tractora_actual = st.text_input("Tractora que deja (si aplica):", value=tractora_asignada).upper().strip()
-        tractora_actual = normalizar_tractora(tractora_actual, tractoras_df)
+        tractora_actual = normalizar_matricula(tractora_actual, tractoras_df)
         estado_tractora = st.selectbox("Estado de la tractora que deja:", ["", "Disponible", "Mantenimiento", "Baja"])
         tractora_nueva = st.text_input("Nueva tractora que asume (si aplica):").upper().strip()
-        tractora_nueva = normalizar_tractora(tractora_nueva, tractoras_df)
+        tractora_nueva = normalizar_matricula(tractora_nueva, tractoras_df)
     else:
         tractora_actual = tractora_nueva = estado_tractora = None
 
@@ -116,29 +102,29 @@ def consulta_matriculas():
         if cambiar_tractora and not tractora_nueva:
             choferes_df.loc[choferes_df["Chofer"] == chofer, "Tractora asignada"] = ""
 
-        with pd.ExcelWriter("base_datos_Virosque.xlsx", engine="openpyxl", mode="a", if_sheet_exists="overlay") as writer:
-            choferes_df.to_excel(writer, sheet_name="Chóferes", index=False)
-            remolques_df.to_excel(writer, sheet_name="Remolques", index=False)
-            tractoras_df.to_excel(writer, sheet_name="Tractoras", index=False)
+        # Guardar cambios en CSV
+        choferes_df.to_csv("choferes.csv", index=False)
+        remolques_df.to_csv("remolques.csv", index=False)
+        tractoras_df.to_csv("tractoras.csv", index=False)
 
-        try:
-            historial_df = pd.read_excel("base_datos_Virosque.xlsx", sheet_name="Historial")
-        except:
-            historial_df = pd.DataFrame(columns=["Fecha", "Evento"])
-
+        # Registro en historial
         evento = f"{chofer} deja tractora {tractora_actual or 'ninguna'} ({estado_tractora or 'sin cambio'}) y asume {tractora_nueva or 'ninguna'}, deja remolque {remolque_actual or 'ninguno'} ({estado_remolque or 'sin cambio'}) y asume {remolque_nuevo or 'ninguno'}"
         nueva_fila = pd.DataFrame({"Fecha": [datetime.now()], "Evento": [evento]})
-        historial_df = pd.concat([historial_df, nueva_fila], ignore_index=True)
 
-        with pd.ExcelWriter("base_datos_MAKE_Virosque.xlsx", engine="openpyxl", mode="a", if_sheet_exists="overlay") as writer:
-            historial_df.to_excel(writer, sheet_name="Historial", index=False)
+        try:
+            historial_df = pd.read_csv("historial.csv")
+        except FileNotFoundError:
+            historial_df = pd.DataFrame(columns=["Fecha", "Evento"])
+
+        historial_df = pd.concat([historial_df, nueva_fila], ignore_index=True)
+        historial_df.to_csv("historial.csv", index=False)
 
         st.success("✅ Cambio registrado y guardado correctamente.")
 
     st.divider()
     st.subheader("📤 Exportar historial de cambios")
     try:
-        historial_df = pd.read_excel("base_datos_Virosque.xlsx", sheet_name="Historial")
+        historial_df = pd.read_csv("historial.csv")
         csv = historial_df.to_csv(index=False).encode('utf-8')
         st.download_button("📥 Descargar historial en CSV", data=csv, file_name="historial_cambios.csv", mime="text/csv")
     except:
