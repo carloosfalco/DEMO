@@ -8,28 +8,37 @@ def gestion_choferes():
     st.title("🚚 Gestión de Chóferes – Fleet and Route Management")
 
     # --- Configuración segura ---
-    AIRTABLE_TOKEN = st.secrets["AIRTABLE_TOKEN"]
+    try:
+        AIRTABLE_TOKEN = st.secrets["AIRTABLE_TOKEN"]
+    except KeyError:
+        st.error("❌ No se encontró el token en st.secrets. Asegúrate de configurar correctamente secrets.toml.")
+        return
+
     BASE_ID = "appxhB5R5nco0MZpT"
     TABLE_NAME = "Fleet and Route Management"
 
     # --- Conexión a Airtable ---
-    table = Table(AIRTABLE_TOKEN, BASE_ID, TABLE_NAME)
+    try:
+        table = Table(AIRTABLE_TOKEN, BASE_ID, TABLE_NAME)
+    except Exception as e:
+        st.error("❌ Error al conectar con la tabla de Airtable.")
+        st.exception(e)
+        return
 
     # --- Buscador por nombre ---
     search_name = st.text_input("🔍 Buscar por nombre de chófer:")
 
-    if search_name:
-        formula = match({"Chofer": search_name})
-        records = table.all(formula=formula)
-    else:
     try:
-        records = table.all()
+        if search_name:
+            formula = match({"Chofer": search_name})
+            records = table.all(formula=formula)
+        else:
+            records = table.all()
         st.success(f"✅ Se han recibido {len(records)} registros.")
     except Exception as e:
         st.error("❌ Error al obtener los registros de Airtable.")
         st.exception(e)
         return
-
 
     # --- Mostrar resultados ---
     if not records:
@@ -52,5 +61,9 @@ def gestion_choferes():
                     "Matr Remolque": remolque,
                     "ESTADO": estado
                 }
-                table.update(record_id, updates)
-                st.success("✅ Registro actualizado correctamente.")
+                try:
+                    table.update(record_id, updates)
+                    st.success("✅ Registro actualizado correctamente.")
+                except Exception as e:
+                    st.error("❌ No se pudo actualizar el registro.")
+                    st.exception(e)
