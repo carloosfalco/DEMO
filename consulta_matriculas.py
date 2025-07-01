@@ -14,7 +14,7 @@ def get_gsheet_connection():
         scopes=["https://www.googleapis.com/auth/spreadsheets"]
     )
     gc = gspread.authorize(credentials)
-    sh = gc.open_by_url("https://docs.google.com/spreadsheets/d/1KL9-HYhaSaSSRFirjxPNox24dVHOBlA2Zmny4G1GTj4/edit")
+    sh = gc.open_by_key("1KL9-HYhaSaSSRFirjxPNox24dVHOBlA2Zmny4G1GTj4")
     return sh
 
 def normalizar_matricula(input_txt, df):
