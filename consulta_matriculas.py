@@ -1,21 +1,21 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+import json
 from google.oauth2 import service_account
 import gspread
 
-# Autenticación con Google Sheets
-@st.cache_resource
+# Conexión segura usando st.secrets
 def get_gsheet_connection():
-    credentials = service_account.Credentials.from_service_account_file(
-        "service_account.json",
+    creds_dict = st.secrets["GOOGLE_SERVICE_ACCOUNT"]
+    credentials = service_account.Credentials.from_service_account_info(
+        creds_dict,
         scopes=["https://www.googleapis.com/auth/spreadsheets"]
     )
     gc = gspread.authorize(credentials)
     sh = gc.open_by_url("https://docs.google.com/spreadsheets/d/1KL9-HYhaSaSSRFirjxPNox24dVHOBlA2Zmny4G1GTj4/edit")
     return sh
 
-# Funciones auxiliares para normalizar matrículas
 def normalizar_matricula(input_txt, df):
     input_txt = input_txt.upper().strip()
     if input_txt in df["Matrícula"].values:
@@ -28,7 +28,6 @@ def normalizar_matricula(input_txt, df):
 def consulta_matriculas():
     st.title("🔍 Consulta de matrículas")
 
-    # Cargar datos
     sh = get_gsheet_connection()
     choferes_df = pd.DataFrame(sh.worksheet("Chóferes").get_all_records())
     remolques_df = pd.DataFrame(sh.worksheet("Remolques").get_all_records())
@@ -69,7 +68,6 @@ def consulta_matriculas():
 
     cambiar_remolque = st.checkbox("Modificar remolque")
     if cambiar_remolque:
-        st.markdown("**Remolque**")
         remolque_actual = st.text_input("Remolque que deja (si aplica):", value=remolque_asignado).upper().strip()
         estado_remolque = st.selectbox("Estado del remolque que deja:", ["", "Disponible", "Mantenimiento", "Baja"])
         remolque_nuevo = st.text_input("Nuevo remolque que asume (si aplica):").upper().strip()
@@ -78,7 +76,6 @@ def consulta_matriculas():
 
     cambiar_tractora = st.checkbox("Modificar tractora")
     if cambiar_tractora:
-        st.markdown("**Tractora**")
         tractora_actual = st.text_input("Tractora que deja (si aplica):", value=tractora_asignada).upper().strip()
         estado_tractora = st.selectbox("Estado de la tractora que deja:", ["", "Disponible", "Mantenimiento", "Baja"])
         tractora_nueva = st.text_input("Nueva tractora que asume (si aplica):").upper().strip()
@@ -95,8 +92,8 @@ def consulta_matriculas():
         st.success("✅ Cambio registrado correctamente en Google Sheets.")
 
     st.divider()
-    st.subheader("📄 Exportar historial")
+    st.subheader("📤 Exportar historial")
     historial_df = pd.DataFrame(sh.worksheet("Historial").get_all_records())
     st.dataframe(historial_df)
     csv = historial_df.to_csv(index=False).encode('utf-8')
-    st.download_button("📅 Descargar historial en CSV", data=csv, file_name="historial_cambios.csv", mime="text/csv")
+    st.download_button("📥 Descargar historial en CSV", data=csv, file_name="historial_cambios.csv", mime="text/csv")
