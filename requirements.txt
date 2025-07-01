@@ -13,4 +13,4 @@ streamlit-calendar
 XlsxWriter
 python-dotenv
 pyairtable
-streamlit-gsheets==0.1.4
+
