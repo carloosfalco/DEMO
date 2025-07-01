@@ -13,3 +13,4 @@ streamlit-calendar
 XlsxWriter
 python-dotenv
 pyairtable
+streamlit-gsheets
