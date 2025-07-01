@@ -13,5 +13,7 @@ streamlit-calendar
 XlsxWriter
 python-dotenv
 pyairtable
+gspread
+oauth2client
 
 
