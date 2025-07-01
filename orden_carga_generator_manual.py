@@ -24,7 +24,7 @@ def generar_orden_carga_manual():
     st.session_state.ida_vuelta = ida_vuelta
 
     if not ida_vuelta:
-        entregar_de_seguido = st.checkbox("📌 Entregar de seguido", key="entregar_seguido")
+        entregar_de_seguido = st.checkbox("Entregar de seguido", key="entregar_seguido")
 
     if ida_vuelta:
         num_origenes = 2
@@ -63,7 +63,7 @@ def generar_orden_carga_manual():
                     destino_1_val = destino
                 fecha_descarga = st.date_input(f"Fecha de descarga Destino {i+1}", value=date.today(), key=f"fecha_descarga_{i}")
                 hora_descarga = st.text_input(f"🕓 Hora de descarga Destino {i+1}", key=f"hora_descarga_{i}")
-                ref_cliente = st.text_area(f"📌 Referencia cliente Destino {i+1}", key=f"ref_cliente_{i}")
+                ref_cliente = st.text_area(f"🔖 Referencia cliente Destino {i+1}", key=f"ref_cliente_{i}")
                 _incluir_link = st.checkbox("Incluir enlace Maps", value=incluir_todos_links, key=f"link_destino_{i}")
                 incluir_link = incluir_todos_links or _incluir_link
                 destinos.append((destino.strip(), fecha_descarga, hora_descarga.strip(), ref_cliente.strip(), incluir_link))
@@ -72,7 +72,7 @@ def generar_orden_carga_manual():
             if st.session_state.entregar_seguido:
                 fecha_descarga_comun = fecha_carga_unica
             else:
-                fecha_descarga_comun = st.date_input("📅 Fecha de descarga", value=fecha_carga_unica + timedelta(days=1), key="fecha_descarga_comun")
+                fecha_descarga_comun = st.date_input("Fecha de descarga", value=fecha_carga_unica + timedelta(days=1), key="fecha_descarga_comun")
 
             for i in range(num_origenes):
                 st.markdown(f"#### 📍 Origen {i+1}")
