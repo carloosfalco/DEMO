@@ -171,7 +171,7 @@ def gestion_remolques():
 
     st.divider()
 
-    with st.expander("➕ Registrar nuevo movimiento", expanded=False):
+    with st.expander("➕ Registrar nuevo mantenimiento", expanded=False):
         matricula = st.text_input("Matrícula").strip().upper()
         tipo_detectado = subtipos[subtipos["matricula"].str.strip().str.upper() == matricula]["subtipo"].values
         tipo = tipo_detectado[0] if len(tipo_detectado) > 0 else st.selectbox("Tipo de vehículo", ["LONA", "FRIGO MONO", "FRIGO MULTI", "ASTILLERA", "PORTABOBINAS"])
