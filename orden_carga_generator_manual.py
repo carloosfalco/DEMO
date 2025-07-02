@@ -20,7 +20,7 @@ def generar_orden_carga_manual():
     st.title("📦 Generador de Orden de Carga")
     st.markdown("Completa los siguientes datos para generar una orden.")
 
-    ida_vuelta = st.toggle("↔️ Ida y vuelta", value=st.session_state.get("ida_vuelta", False))
+    ida_vuelta = st.toggle("⇄ Ida y vuelta", value=st.session_state.get("ida_vuelta", False))
     st.session_state.ida_vuelta = ida_vuelta
 
     if not ida_vuelta:
@@ -37,6 +37,8 @@ def generar_orden_carga_manual():
 
     with st.form("orden_form"):
         chofer = st.text_input("Nombre del chofer", key="chofer")
+        tipo_mercancia = st.text_input("📦 Tipo de mercancía (opcional)", key="tipo_mercancia").strip()
+        observaciones = st.text_area("📜 Observaciones (opcional)", key="observaciones").strip()
         ref_interna = st.text_input("🔐 Referencia interna", key="ref_interna")
         incluir_todos_links = st.checkbox("Incluir enlaces de Google Maps para todas las ubicaciones", key="incluir_todos_links")
 
@@ -92,8 +94,6 @@ def generar_orden_carga_manual():
                 incluir_link = incluir_todos_links or _incluir_link
                 destinos.append((destino.strip(), fecha_descarga_comun, hora_descarga.strip(), ref_cliente.strip(), incluir_link))
 
-        tipo_mercancia = st.text_input("📦 Tipo de mercancía (opcional)", key="tipo_mercancia").strip()
-        observaciones = st.text_area("📜 Observaciones (opcional)", key="observaciones").strip()
         submitted = st.form_submit_button("Generar orden")
 
     if submitted:
