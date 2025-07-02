@@ -37,9 +37,6 @@ def generar_orden_carga_manual():
 
     with st.form("orden_form"):
         chofer = st.text_input("Nombre del chofer", key="chofer")
-        tipo_mercancia = st.text_input("📦 Tipo de mercancía (opcional)", key="tipo_mercancia").strip()
-        observaciones = st.text_area("📜 Observaciones (opcional)", key="observaciones").strip()
-        ref_interna = st.text_input("🔐 Referencia interna", key="ref_interna")
         incluir_todos_links = st.checkbox("Incluir enlaces de Google Maps para todas las ubicaciones", key="incluir_todos_links")
 
         origenes, destinos = [], []
@@ -93,6 +90,10 @@ def generar_orden_carga_manual():
                 _incluir_link = st.checkbox("Incluir enlace Maps", value=incluir_todos_links, key=f"link_destino_{i}")
                 incluir_link = incluir_todos_links or _incluir_link
                 destinos.append((destino.strip(), fecha_descarga_comun, hora_descarga.strip(), ref_cliente.strip(), incluir_link))
+
+        tipo_mercancia = st.text_input("📦 Tipo de mercancía (opcional)", key="tipo_mercancia").strip()
+        observaciones = st.text_area("📜 Observaciones (opcional)", key="observaciones").strip()
+        ref_interna = st.text_input("🔐 Referencia interna", key="ref_interna")
 
         submitted = st.form_submit_button("Generar orden")
 
