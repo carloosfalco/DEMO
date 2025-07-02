@@ -99,8 +99,6 @@ def generar_orden_carga_manual():
     if submitted:
         mensaje = f"Hola {chofer}," if chofer else "Hola,"
         mensaje += f" esta es la orden de carga:\n\n"
-        if ref_interna:
-            mensaje += f"🔐 Ref. interna: {ref_interna}\n\n"
 
         bloques = []
         if ida_vuelta:
@@ -176,6 +174,9 @@ def generar_orden_carga_manual():
 
         if observaciones:
             mensaje += f"\n\n📌 {observaciones}"
+
+        if ref_interna:
+            mensaje += f"\n\n🔐 Ref. interna: {ref_interna}"
 
         if ida_vuelta:
             mensaje += "\n\n🔁 Este es un viaje de ida y vuelta"
