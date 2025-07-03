@@ -1,6 +1,12 @@
+import streamlit as st
+import pandas as pd
+from datetime import datetime
+import json
+from google.oauth2 import service_account
+import gspread
+
 def consulta_matriculas():
     st.title("🤖 Instrucciones para usar el Bot de Telegram")
-
     st.markdown("""
     Si lo prefieres, ahora puedes consultar y registrar cambios de tractora o remolque directamente desde Telegram, sin necesidad de entrar a esta web.
 
