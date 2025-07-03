@@ -1,3 +1,4 @@
+Tú dijiste:
 import streamlit as st
 import openrouteservice
 import requests
@@ -6,7 +7,6 @@ from datetime import datetime, timedelta
 import folium
 from streamlit_folium import st_folium
 from PIL import Image
-import urllib.parse
 
 def planificador_rutas():
     api_key = "5b3ce3597851110001cf6248ec3aedee3fa14ae4b1fd1b2440f2e589"
@@ -145,42 +145,18 @@ def planificador_rutas():
         st_folium(m, width=1200, height=500)
 
 def geocode(direccion, api_key):
-    """Primero intenta con OpenRouteService. Si falla, usa Nominatim como alternativa."""
-    url_ors = "https://api.openrouteservice.org/geocode/search"
-    params_ors = {
+    url = "https://api.openrouteservice.org/geocode/search"
+    params = {
         "api_key": api_key,
         "text": direccion,
         "boundary.country": "ES",
         "size": 1
     }
-
-    try:
-        r = requests.get(url_ors, params=params_ors, timeout=10)
-        r.raise_for_status()
-        data = r.json()
-        if data.get("features"):
-            coord = data["features"][0]["geometry"]["coordinates"]
-            label = data["features"][0]["properties"]["label"]
-            return coord, label
-    except Exception as e:
-        st.warning(f"⚠️ ORS falló para '{direccion}', usando Nominatim como alternativa...")
-
-    # Fallback: Nominatim
-    try:
-        direccion_encoded = urllib.parse.quote_plus(direccion)
-        url_nom = f"https://nominatim.openstreetmap.org/search?q={direccion_encoded}&format=json&limit=1&countrycodes=es"
-        headers = {"User-Agent": "streamlit-virosque-bot"}
-        r2 = requests.get(url_nom, headers=headers, timeout=10)
-        r2.raise_for_status()
-        data2 = r2.json()
-        if data2:
-            lon = float(data2[0]["lon"])
-            lat = float(data2[0]["lat"])
-            label = data2[0]["display_name"]
-            return [lon, lat], label
-        else:
-            st.error(f"❌ No se encontró la dirección '{direccion}' ni con ORS ni con Nominatim.")
-            return None, None
-    except Exception as e2:
-        st.error(f"❌ Fallo total al geocodificar '{direccion}': {e2}")
+    r = requests.get(url, params=params)
+    data = r.json()
+    if data.get("features"):
+        coord = data["features"][0]["geometry"]["coordinates"]
+        label = data["features"][0]["properties"]["label"]
+        return coord, label
+    else:
         return None, None
