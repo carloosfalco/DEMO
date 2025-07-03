@@ -8,7 +8,7 @@ import gspread
 def consulta_matriculas():
     st.title("🤖 Instrucciones para usar el Bot de Telegram")
     st.markdown("""
-    Si lo prefieres, ahora puedes consultar y registrar cambios de tractora o remolque directamente desde Telegram, sin necesidad de entrar a esta web.
+    Ahora puedes realizar consultar a cerca de tractoras o remolques desde Telegram.
 
     ### 👉 ¿Cómo usar el bot?
     1. Abre la app de Telegram.
