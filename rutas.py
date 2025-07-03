@@ -1,4 +1,3 @@
-Tú dijiste:
 import streamlit as st
 import openrouteservice
 import requests
