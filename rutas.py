@@ -1,21 +1,52 @@
 import streamlit as st
-import openrouteservice
 import requests
 import math
 from datetime import datetime, timedelta
 import folium
 from streamlit_folium import st_folium
 from PIL import Image
+import polyline
+
+# 💡 Reemplaza con tu propia API Key de Google Maps Platform
+GOOGLE_API_KEY = "TU_API_KEY_AQUI"
+
+def geocode_google(direccion, api_key):
+    url = "https://maps.googleapis.com/maps/api/geocode/json"
+    params = {"address": direccion, "key": api_key}
+    r = requests.get(url, params=params).json()
+    if r["status"] == "OK":
+        location = r["results"][0]["geometry"]["location"]
+        return [location["lng"], location["lat"]], r["results"][0]["formatted_address"]
+    else:
+        return None, None
+
+def obtener_ruta_google(coordenadas, api_key):
+    url = "https://maps.googleapis.com/maps/api/directions/json"
+    origen = f"{coordenadas[0][1]},{coordenadas[0][0]}"
+    destino = f"{coordenadas[-1][1]},{coordenadas[-1][0]}"
+    waypoints = "|".join([f"{p[1]},{p[0]}" for p in coordenadas[1:-1]]) if len(coordenadas) > 2 else ""
+
+    params = {
+        "origin": origen,
+        "destination": destino,
+        "waypoints": waypoints,
+        "mode": "driving",
+        "key": api_key
+    }
+
+    r = requests.get(url, params=params).json()
+    if r["status"] == "OK":
+        ruta = r["routes"][0]
+        distancia_total = sum(leg["distance"]["value"] for leg in ruta["legs"])
+        duracion_total = sum(leg["duration"]["value"] for leg in ruta["legs"])
+        polyline_str = ruta["overview_polyline"]["points"]
+        return distancia_total, duracion_total, polyline_str
+    else:
+        return None, None, None
 
 def planificador_rutas():
-    api_key = "5b3ce3597851110001cf6248ec3aedee3fa14ae4b1fd1b2440f2e589"
-    client = openrouteservice.Client(key=api_key)
-
     st.markdown("""
         <style>
-            body {
-                background-color: #f5f5f5;
-            }
             .stButton>button {
                 background-color: #8D1B2D;
                 color: white;
@@ -49,13 +80,13 @@ def planificador_rutas():
     if st.button("🔍 Calcular Ruta"):
         st.session_state.resultados = None
 
-        coord_origen, _ = geocode(origen, api_key)
-        coord_destino, _ = geocode(destino, api_key)
+        coord_origen, _ = geocode_google(origen, GOOGLE_API_KEY)
+        coord_destino, _ = geocode_google(destino, GOOGLE_API_KEY)
 
         stops_list = []
         if stops.strip():
             for parada in stops.strip().split("\n"):
-                coord, _ = geocode(parada, api_key)
+                coord, _ = geocode_google(parada, GOOGLE_API_KEY)
                 if coord:
                     stops_list.append(coord)
                 else:
@@ -66,24 +97,14 @@ def planificador_rutas():
             return
 
         coords_totales = [coord_origen] + stops_list + [coord_destino]
+        distancia, duracion, poly = obtener_ruta_google(coords_totales, GOOGLE_API_KEY)
 
-        try:
-            ruta = client.directions(
-                coordinates=coords_totales,
-                profile='driving-hgv',
-                preference='recommended',
-                format='geojson'
-            )
-        except openrouteservice.exceptions.ApiError as e:
-            st.error(f"❌ Error al calcular la ruta: {e}")
+        if not poly:
+            st.error("❌ No se pudo calcular la ruta.")
             return
 
-        segmentos = ruta['features'][0]['properties']['segments']
-        distancia_total = sum(seg["distance"] for seg in segmentos)
-        duracion_total = sum(seg["duration"] for seg in segmentos)
-
-        distancia_km = distancia_total / 1000
-        duracion_horas = duracion_total / 3600
+        distancia_km = distancia / 1000
+        duracion_horas = duracion / 3600
         descansos = math.floor(duracion_horas / 4.5)
         tiempo_total_h = duracion_horas + descansos * 0.75
         descanso_diario_h = 11 if tiempo_total_h > 13 else 0
@@ -107,7 +128,7 @@ def planificador_rutas():
             "hora_llegada_dt": hora_llegada,
             "hora_salida_dt": hora_salida,
             "tiempo_total_real_h": tiempo_total_real_h,
-            "linea": ruta["features"][0]["geometry"]["coordinates"],
+            "linea": polyline.decode(poly),
             "coord_origen": coord_origen,
             "stops_list": stops_list,
             "coord_destino": coord_destino
@@ -133,7 +154,7 @@ def planificador_rutas():
             etiqueta = " (día siguiente)" if cambia_dia else ""
             col5.metric("🛌 Llegada + descanso", llegada_tras_descanso.strftime("%H:%M") + etiqueta)
 
-        linea_latlon = [[p[1], p[0]] for p in r['linea']]
+        linea_latlon = [[lat, lng] for lat, lng in r['linea']]
         m = folium.Map(location=linea_latlon[0], zoom_start=6)
         folium.Marker(location=[r['coord_origen'][1], r['coord_origen'][0]], tooltip="📍 Origen").add_to(m)
         for idx, parada in enumerate(r['stops_list']):
@@ -142,20 +163,3 @@ def planificador_rutas():
         folium.PolyLine(linea_latlon, color="blue", weight=5).add_to(m)
         st.markdown("### 🗘️ Ruta estimada en mapa:")
         st_folium(m, width=1200, height=500)
-
-def geocode(direccion, api_key):
-    url = "https://api.openrouteservice.org/geocode/search"
-    params = {
-        "api_key": api_key,
-        "text": direccion,
-        "boundary.country": "ES",
-        "size": 1
-    }
-    r = requests.get(url, params=params)
-    data = r.json()
-    if data.get("features"):
-        coord = data["features"][0]["geometry"]["coordinates"]
-        label = data["features"][0]["properties"]["label"]
-        return coord, label
-    else:
-        return None, None
