@@ -8,7 +8,7 @@ from PIL import Image
 import polyline
 
 # 💡 Reemplaza con tu propia API Key de Google Maps Platform
-GOOGLE_API_KEY = "TU_API_KEY_AQUI"
+GOOGLE_API_KEY = "AIzaSyCt_46YfpaWYdW3DTRivVj2YX-xBgfbEus"
 
 def geocode_google(direccion, api_key):
     url = "https://maps.googleapis.com/maps/api/geocode/json"
