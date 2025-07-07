@@ -7,17 +7,23 @@ from streamlit_folium import st_folium
 from PIL import Image
 import polyline
 
-# 💡 Reemplaza con tu propia API Key de Google Maps Platform
+# 💡 Sustituye con tu propia API Key de Google
 GOOGLE_API_KEY = "AIzaSyCt_46YfpaWYdW3DTRivVj2YX-xBgfbEus"
 
 def geocode_google(direccion, api_key):
     url = "https://maps.googleapis.com/maps/api/geocode/json"
     params = {"address": direccion, "key": api_key}
     r = requests.get(url, params=params).json()
-    if r["status"] == "OK":
+
+    if r.get("status") == "OK" and r.get("results"):
         location = r["results"][0]["geometry"]["location"]
         return [location["lng"], location["lat"]], r["results"][0]["formatted_address"]
     else:
+        st.error(f"❌ Error al geolocalizar: '{direccion}'")
+        st.code(f"Status: {r.get('status')}")
+        if "error_message" in r:
+            st.warning(f"🔍 Mensaje de Google: {r['error_message']}")
+        st.info("🔧 Verifica la dirección o tu API Key.")
         return None, None
 
 def obtener_ruta_google(coordenadas, api_key):
@@ -35,13 +41,19 @@ def obtener_ruta_google(coordenadas, api_key):
     }
 
     r = requests.get(url, params=params).json()
-    if r["status"] == "OK":
+
+    if r.get("status") == "OK":
         ruta = r["routes"][0]
         distancia_total = sum(leg["distance"]["value"] for leg in ruta["legs"])
         duracion_total = sum(leg["duration"]["value"] for leg in ruta["legs"])
         polyline_str = ruta["overview_polyline"]["points"]
         return distancia_total, duracion_total, polyline_str
     else:
+        st.error("❌ No se pudo calcular la ruta.")
+        st.code(f"Status: {r.get('status')}")
+        if "error_message" in r:
+            st.warning(f"🔍 Mensaje de Google: {r['error_message']}")
+        st.info("🔧 Verifica las coordenadas o límites de la API.")
         return None, None, None
 
 def planificador_rutas():
@@ -100,7 +112,6 @@ def planificador_rutas():
         distancia, duracion, poly = obtener_ruta_google(coords_totales, GOOGLE_API_KEY)
 
         if not poly:
-            st.error("❌ No se pudo calcular la ruta.")
             return
 
         distancia_km = distancia / 1000
