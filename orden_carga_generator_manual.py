@@ -91,7 +91,20 @@ def generar_orden_carga_manual():
                 incluir_link = incluir_todos_links or _incluir_link
                 destinos.append((destino.strip(), fecha_descarga_comun, hora_descarga.strip(), ref_cliente.strip(), incluir_link))
 
-        tipo_mercancia = st.text_input("📦 Tipo de mercancía (opcional)", key="tipo_mercancia").strip()
+        tipo_mercancia = st.selectbox(
+            "📦 Tipo de mercancía (opcional)",
+            options=[
+                "", 
+                "Seco", 
+                "Refrigerado", 
+                "Congelado (-25ºC) en continuo", 
+                "Congelado (-25ºC) start/stop"
+            ],
+            index=0,
+            key="tipo_mercancia",
+            help="Selecciona un tipo o deja vacío si no aplica."
+        )
+
         observaciones = st.text_area("📜 Observaciones (opcional)", key="observaciones").strip()
         ref_interna = st.text_input("🔐 Referencia interna", key="ref_interna")
 
