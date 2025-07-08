@@ -105,6 +105,10 @@ def generar_orden_carga_manual():
             help="Selecciona un tipo o deja vacío si no aplica."
         )
 
+        temperatura_refrigerado = ""
+        if tipo_mercancia == "Refrigerado":
+            temperatura_refrigerado = st.text_input("🌡️ Temperatura de refrigeración (ºC)", key="temp_refrigerado").strip()
+
         observaciones = st.text_area("📜 Observaciones (opcional)", key="observaciones").strip()
         ref_interna = st.text_input("🔐 Referencia interna", key="ref_interna")
 
@@ -185,6 +189,8 @@ def generar_orden_carga_manual():
 
         if tipo_mercancia:
             mensaje += f"\n\n📦 Tipo de mercancía: {tipo_mercancia}"
+            if tipo_mercancia == "Refrigerado" and temperatura_refrigerado:
+                mensaje += f" a {temperatura_refrigerado}ºC"
 
         if observaciones:
             mensaje += f"\n\n📌 {observaciones}"
