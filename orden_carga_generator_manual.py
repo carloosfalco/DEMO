@@ -171,7 +171,7 @@ def generar_orden_carga_manual():
         mensaje += "\n\n".join(bloques)
 
         if temperatura_refrigerado:
-            mensaje += f"\n\n📦 A {temperatura_refrigerado}ºC en continuo, envía foto del display en el sitio de carga."
+            mensaje += f"\n\n📦 Temperatura: {temperatura_refrigerado} en continuo, envía foto del display en el sitio de carga."
 
         if observaciones:
             mensaje += f"\n\n📌 {observaciones}"
