@@ -91,7 +91,7 @@ def generar_orden_carga_manual():
                 incluir_link = incluir_todos_links or _incluir_link
                 destinos.append((destino.strip(), fecha_descarga_comun, hora_descarga.strip(), ref_cliente.strip(), incluir_link))
 
-        temperatura_refrigerado = st.text_input("🌡️ Temperatura (opcional, en ºC)", key="temp_refrigerado").strip()
+        temperatura_refrigerado = st.text_input("🌡️ Temperatura", key="temp_refrigerado").strip()
         observaciones = st.text_area("📜 Observaciones (opcional)", key="observaciones").strip()
         ref_interna = st.text_input("🔐 Referencia interna", key="ref_interna")
 
