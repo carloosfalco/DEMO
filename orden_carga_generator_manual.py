@@ -86,29 +86,12 @@ def generar_orden_carga_manual():
                 st.markdown(f"#### 📍 Destino {i+1}")
                 destino = st.text_input(f"Dirección Destino {i+1}", key=f"destino_{i}")
                 hora_descarga = st.text_input(f"🕓 Hora de descarga Destino {i+1}", key=f"hora_descarga_{i}")
-                ref_cliente = st.text_area(f"🔖 Referencia cliente Destino {i+1}", key=f"ref_cliente_{i}")
+                ref_cliente = st.text_area(f"📌 Referencia cliente Destino {i+1}", key=f"ref_cliente_{i}")
                 _incluir_link = st.checkbox("Incluir enlace Maps", value=incluir_todos_links, key=f"link_destino_{i}")
                 incluir_link = incluir_todos_links or _incluir_link
                 destinos.append((destino.strip(), fecha_descarga_comun, hora_descarga.strip(), ref_cliente.strip(), incluir_link))
 
-        tipo_mercancia = st.selectbox(
-            "📦 Tipo de mercancía (opcional)",
-            options=[
-                "", 
-                "Seco", 
-                "Refrigerado", 
-                "Congelado (-25ºC) en continuo", 
-                "Congelado (-25ºC) start/stop"
-            ],
-            index=0,
-            key="tipo_mercancia",
-            help="Selecciona un tipo o deja vacío si no aplica."
-        )
-
-        temperatura_refrigerado = ""
-        if tipo_mercancia == "Refrigerado":
-            temperatura_refrigerado = st.text_input("🌡️ Temperatura de refrigeración (ºC)", key="temp_refrigerado").strip()
-
+        temperatura_refrigerado = st.text_input("🌡️ Temperatura (opcional, en ºC)", key="temp_refrigerado").strip()
         observaciones = st.text_area("📜 Observaciones (opcional)", key="observaciones").strip()
         ref_interna = st.text_input("🔐 Referencia interna", key="ref_interna")
 
@@ -187,10 +170,8 @@ def generar_orden_carga_manual():
 
         mensaje += "\n\n".join(bloques)
 
-        if tipo_mercancia:
-            mensaje += f"\n\n📦 Tipo de mercancía: {tipo_mercancia}"
-            if tipo_mercancia == "Refrigerado" and temperatura_refrigerado:
-                mensaje += f" a {temperatura_refrigerado}ºC"
+        if temperatura_refrigerado:
+            mensaje += f"\n\n📦 A {temperatura_refrigerado}ºC en continuo, envía foto del display en el sitio de carga."
 
         if observaciones:
             mensaje += f"\n\n📌 {observaciones}"
