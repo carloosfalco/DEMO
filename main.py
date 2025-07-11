@@ -1,7 +1,6 @@
 import streamlit as st
 from rutas import planificador_rutas
 from orden_carga_generator_manual import generar_orden_carga_manual
-from gestion_remolques import gestion_remolques
 from consulta_matriculas import consulta_matriculas
 
 
@@ -12,7 +11,6 @@ def main():
     seleccion = st.sidebar.radio("Selecciona una opción", [
         "Planificador de rutas",
         "Orden de carga",
-        "Gestión de remolques",
         "Consulta de matrículas" 
     ])
 
@@ -20,8 +18,6 @@ def main():
         planificador_rutas()
     elif seleccion == "Orden de carga":
         generar_orden_carga_manual()
-    elif seleccion == "Gestión de remolques":
-        gestion_remolques()
     elif seleccion == "Consulta de matrículas":
         consulta_matriculas()
 
