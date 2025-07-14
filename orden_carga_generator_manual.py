@@ -113,9 +113,9 @@ def generar_orden_carga_manual():
                     bloque.append(linea)
                     if origenes[i][2]:
                         ref_lines = origenes[i][2].splitlines()
-                        bloque.append(f"    Ref. carga: {ref_lines[0]}")
-                        for line in ref_lines[1:]:
-                            bloque.append(f"                   {line}")
+                        bloque.append(f"    Ref. carga:")
+                        for line in ref_lines:
+                            bloque.append(f"      {line}")
                     if origenes[i][3]:
                         bloque.append(f"    🌐 {generar_enlace_maps(origenes[i][0])}")
 
@@ -143,9 +143,9 @@ def generar_orden_carga_manual():
                     cargas.append(linea)
                     if ref_carga:
                         ref_lines = ref_carga.splitlines()
-                        cargas.append(f"    Ref. carga: {ref_lines[0]}")
-                        for line in ref_lines[1:]:
-                            cargas.append(f"                   {line}")
+                        cargas.append(f"    Ref. carga:")
+                        for line in ref_lines:
+                            cargas.append(f"      {line}")
                     if incluir_link:
                         cargas.append(f"    🌐 {generar_enlace_maps(origen)}")
             if cargas:
