@@ -140,8 +140,12 @@ def planificador_rutas():
             folium.Marker(location=[parada[1], parada[0]], tooltip=f"Parada {idx + 1}").add_to(m)
         folium.Marker(location=[r['coord_destino'][1], r['coord_destino'][0]], tooltip="Destino").add_to(m)
         folium.PolyLine(linea_latlon, color="blue", weight=5).add_to(m)
+
         st.markdown("### 🗘️ Ruta estimada en mapa:")
         st_folium(m, width=1200, height=500)
+
+        st.info("ℹ️ **Nota importante:** La ruta, duración y hora de llegada mostradas son aproximaciones basadas en datos de OpenRouteService. "
+                "Factores reales como tráfico, condiciones meteorológicas, obras o restricciones específicas para camiones pueden alterar significativamente estos valores.")
 
 def geocode(direccion, api_key):
     url = "https://api.openrouteservice.org/geocode/search"
