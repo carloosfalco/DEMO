@@ -127,7 +127,7 @@ def planificador_rutas():
             st.warning("⚠️ El viaje excede la jornada máxima (13h). Se ha añadido un descanso obligatorio de 11h.")
         else:
             st.success("🟢 El viaje puede completarse en una sola jornada de trabajo.")
-            st.info("ℹ️ **Nota importante:** La ruta, duración y hora de llegada mostradas son aproximaciones basadas en datos de OpenRouteService. "
+            st.success("ℹ️ **Nota importante:** La ruta, duración y hora de llegada mostradas son aproximaciones basadas en datos de OpenRouteService. "
             "Factores reales como tráfico, condiciones meteorológicas, obras o restricciones específicas para camiones pueden alterar significativamente estos valores.")
 
             llegada_tras_descanso = r["hora_llegada_dt"] + timedelta(hours=11)
