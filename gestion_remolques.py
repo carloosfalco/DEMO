@@ -1,214 +1,165 @@
-# gestion_remolques.py (Kanban + Auto eliminación + botón X + etiqueta días + jefe de tráfico)
 import streamlit as st
-import os
-from dotenv import load_dotenv
-load_dotenv()
-import pandas as pd
-import sqlite3
+import openrouteservice
+import requests
+import math
 from datetime import datetime, timedelta
-from io import BytesIO
+import folium
+from streamlit_folium import st_folium
+from PIL import Image
 
-DB_FILE = "remolques.db"
+def planificador_rutas():
+    api_key = "5b3ce3597851110001cf6248ec3aedee3fa14ae4b1fd1b2440f2e589"
+    client = openrouteservice.Client(key=api_key)
 
-# ---------------------- UTILIDADES ----------------------
-def cargar_tabla(nombre):
-    with sqlite3.connect(DB_FILE) as conn:
-        return pd.read_sql_query(f"SELECT * FROM {nombre}", conn)
+    st.markdown("""
+        <style>
+            body {
+                background-color: #f5f5f5;
+            }
+            .stButton>button {
+                background-color: #8D1B2D;
+                color: white;
+                border-radius: 6px;
+                padding: 0.6em 1em;
+                border: none;
+                font-weight: bold;
+            }
+            .stButton>button:hover {
+                background-color: #a7283d;
+                color: white;
+            }
+        </style>
+    """, unsafe_allow_html=True)
 
-def guardar_tabla(nombre, df):
-    with sqlite3.connect(DB_FILE) as conn:
-        df.to_sql(nombre, conn, index=False, if_exists="replace")
+    logo = Image.open("logo-virosque2-01.png")
+    st.image(logo, width=250)
+    st.markdown("<h1 style='color:#8D1B2D;'>TMS</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='color:white; font-size: 18px; font-weight: bold;'>Planificador de rutas para camiones</p>", unsafe_allow_html=True)
 
-def registrar_movimiento(matricula, accion, tipo="", taller="", observaciones=""):
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    nuevo = pd.DataFrame([{ 
-        "fecha_hora": now,
-        "matricula": matricula,
-        "accion": accion,
-        "tipo": tipo,
-        "taller": taller,
-        "observaciones": observaciones
-    }])
-    try:
-        movimientos = cargar_tabla("movimientos")
-        movimientos = pd.concat([movimientos, nuevo], ignore_index=True)
-    except:
-        movimientos = nuevo
-    guardar_tabla("movimientos", movimientos)
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        origen = st.text_input("📍 Origen", value="Valencia, España")
+    with col2:
+        destino = st.text_input("🏁 Destino", value="Madrid, España")
+    with col3:
+        hora_salida_str = st.time_input("🕒 Hora de salida", value=datetime.strptime("08:00", "%H:%M")).strftime("%H:%M")
 
-# ---------------------- UI PRINCIPAL ----------------------
-def gestion_remolques():
-    def asegurar_tabla(nombre, columnas):
+    stops = st.text_area("➕ Paradas intermedias (una por línea)", placeholder="Ej: Albacete, España\nCuenca, España")
+
+    if st.button("🔍 Calcular Ruta"):
+        st.session_state.resultados = None
+
+        coord_origen, _ = geocode(origen, api_key)
+        coord_destino, _ = geocode(destino, api_key)
+
+        stops_list = []
+        if stops.strip():
+            for parada in stops.strip().split("\n"):
+                coord, _ = geocode(parada, api_key)
+                if coord:
+                    stops_list.append(coord)
+                else:
+                    st.warning(f"❌ No se pudo geolocalizar: {parada}")
+
+        if not coord_origen or not coord_destino:
+            st.error("❌ No se pudo geolocalizar el origen o destino.")
+            return
+
+        coords_totales = [coord_origen] + stops_list + [coord_destino]
+
         try:
-            df = cargar_tabla(nombre)
-        except:
-            df = pd.DataFrame(columns=columnas)
-            guardar_tabla(nombre, df)
+            ruta = client.directions(
+                coordinates=coords_totales,
+                profile='driving-hgv',
+                preference='recommended',
+                format='geojson'
+            )
+        except openrouteservice.exceptions.ApiError as e:
+            st.error(f"❌ Error al calcular la ruta: {e}")
+            return
 
-    asegurar_tabla("remolques", ["matricula", "tipo", "taller", "fecha", "parking", "estado", "observaciones"])
-    asegurar_tabla("subtipos", ["matricula", "subtipo"])
-    asegurar_tabla("movimientos", ["fecha_hora", "matricula", "accion", "tipo", "taller", "observaciones"])
-    st.set_page_config(layout="wide")
-    st.title("🚛 Gestión de Remolques ")
+        segmentos = ruta['features'][0]['properties']['segments']
+        distancia_total = sum(seg["distance"] for seg in segmentos)
+        duracion_total = sum(seg["duration"] for seg in segmentos)
 
-    remolques = cargar_tabla("remolques")
-    subtipos = cargar_tabla("subtipos")
+        distancia_km = distancia_total / 1000
+        duracion_horas = duracion_total / 3600
+        descansos = math.floor(duracion_horas / 4.5)
+        tiempo_total_h = duracion_horas + descansos * 0.75
+        descanso_diario_h = 11 if tiempo_total_h > 13 else 0
+        tiempo_total_real_h = tiempo_total_h + descanso_diario_h
+        hora_salida = datetime.strptime(hora_salida_str, "%H:%M")
+        hora_llegada = hora_salida + timedelta(hours=tiempo_total_real_h)
 
-    columnas_necesarias = ["matricula", "tipo", "taller", "fecha", "parking", "estado", "observaciones"]
-    for col in columnas_necesarias:
-        if col not in remolques.columns:
-            remolques[col] = ""
-        remolques[col] = remolques[col].fillna("")
+        def horas_y_minutos(valor_horas):
+            horas = int(valor_horas)
+            minutos = int(round((valor_horas - horas) * 60))
+            return f"{horas}h {minutos:02d}min"
 
-    remolques["estado"] = remolques["estado"].str.lower()
+        tiempo_conduccion_txt = horas_y_minutos(duracion_horas)
+        tiempo_total_txt = horas_y_minutos(tiempo_total_h)
 
-    filtro_matricula_global = st.text_input("🔎 Buscar matrícula", key="filtro_global").strip().upper()
-    columnas = st.columns(3)
-    estados = ["disponible", "mantenimiento", "asignado"]
-    titulos = ["🟢 Disponibles", "🔧 En mantenimiento", "🚚 Asignados"]
+        st.session_state.resultados = {
+            "distancia_km": distancia_km,
+            "tiempo_conduccion_txt": tiempo_conduccion_txt,
+            "tiempo_total_txt": tiempo_total_txt,
+            "hora_llegada": hora_llegada.strftime("%H:%M"),
+            "hora_llegada_dt": hora_llegada,
+            "hora_salida_dt": hora_salida,
+            "tiempo_total_real_h": tiempo_total_real_h,
+            "linea": ruta["features"][0]["geometry"]["coordinates"],
+            "coord_origen": coord_origen,
+            "stops_list": stops_list,
+            "coord_destino": coord_destino
+        }
 
-    if "asignando" not in st.session_state:
-        st.session_state.asignando = None
-        st.session_state.chofer_inputs = {}
-        st.session_state.jefe_inputs = {}
-        st.session_state.observaciones_inputs = {}
+    if "resultados" in st.session_state and st.session_state.resultados:
+        r = st.session_state.resultados
 
-    hoy = datetime.today()
+        st.markdown("### 📊 Datos de la ruta")
+        col1, col2, col3, col4, col5 = st.columns(5)
+        col1.metric("🚣 Distancia", f"{r['distancia_km']:.2f} km")
+        col2.metric("🕓 Conducción", r['tiempo_conduccion_txt'])
+        col3.metric("⏱ Total (con descansos)", r['tiempo_total_txt'])
+        col4.metric("📅 Llegada estimada", r['hora_llegada'])
 
-    remolques_filtrados = []
-    for _, row in remolques.iterrows():
-        if row["estado"] == "asignado":
-            try:
-                fecha = datetime.strptime(row.get("fecha", ""), "%Y-%m-%d")
-                if (hoy - fecha).days > 7:
-                    continue
-            except:
-                pass
-        remolques_filtrados.append(row)
-    remolques = pd.DataFrame(remolques_filtrados)
+        if r['tiempo_total_real_h'] > 13:
+            st.warning("⚠️ El viaje excede la jornada máxima (13h). Se ha añadido un descanso obligatorio de 11h.")
+        else:
+            st.success("🟢 El viaje puede completarse en una sola jornada de trabajo.")
 
-    for col in columnas_necesarias:
-        if col not in remolques.columns:
-            remolques[col] = ""
-        remolques[col] = remolques[col].fillna("")
+            llegada_tras_descanso = r["hora_llegada_dt"] + timedelta(hours=11)
+            cambia_dia = llegada_tras_descanso.date() > r["hora_llegada_dt"].date()
+            etiqueta = " (día siguiente)" if cambia_dia else ""
+            col5.metric("🛌 Llegada + descanso", llegada_tras_descanso.strftime("%H:%M") + etiqueta)
 
-    for idx, (col, estado, titulo) in enumerate(zip(columnas, estados, titulos)):
-        with col:
-            col.subheader(titulo)
-        subdf = remolques[(remolques["estado"] == estado) & (remolques["matricula"].str.upper().str.contains(filtro_matricula_global))]
-        for _, row in subdf.iterrows():
-            if estado == "disponible":
-                resumen = f"{row['matricula']} - {row.get('tipo', '')} - {row.get('parking', '')}"
-            elif estado == "mantenimiento":
-                resumen = f"{row['matricula']} - {row.get('taller', '')}"
-            else:
-                resumen = f"{row['matricula']} - {row.get('taller', '')}"
-            with col.expander(resumen):
-                st.markdown(f"**{row['matricula']}**  ")
-                st.markdown(f"Tipo: {row.get('tipo', '')}  ")
-                st.markdown(f"Taller: {row.get('taller', '-')}, Fecha: {row.get('fecha', '-')}")
-                st.markdown(f"Parking: {row.get('parking', '-')}")
-                if row.get("observaciones", ""):
-                    st.markdown(f"Observaciones: {row['observaciones']}")
+        st.info("ℹ️ **Nota importante:** La ruta, duración y hora de llegada mostradas son aproximaciones basadas en datos de OpenRouteService. "
+                "Factores reales como tráfico, condiciones meteorológicas, obras o restricciones específicas para camiones pueden alterar significativamente estos valores.")
 
-                try:
-                    fecha = datetime.strptime(row.get("fecha", ""), "%Y-%m-%d")
-                    dias = (hoy - fecha).days
-                    st.caption(f"🕒 Hace {dias} días")
-                except:
-                    pass
+        linea_latlon = [[p[1], p[0]] for p in r['linea']]
+        m = folium.Map(location=linea_latlon[0], zoom_start=6)
+        folium.Marker(location=[r['coord_origen'][1], r['coord_origen'][0]], tooltip="📍 Origen").add_to(m)
+        for idx, parada in enumerate(r['stops_list']):
+            folium.Marker(location=[parada[1], parada[0]], tooltip=f"Parada {idx + 1}").add_to(m)
+        folium.Marker(location=[r['coord_destino'][1], r['coord_destino'][0]], tooltip="Destino").add_to(m)
+        folium.PolyLine(linea_latlon, color="blue", weight=5).add_to(m)
 
-                if st.button("❌", key=f"borrar_{row['matricula']}"):
-                    remolques = remolques[remolques["matricula"] != row["matricula"]]
-                    registrar_movimiento(row['matricula'], "Borrado manual", row.get("tipo", ""))
-                    guardar_tabla("remolques", remolques)
-                    st.success(f"🗑 Remolque {row['matricula']} eliminado del panel")
-                    st.stop()
+        st.markdown("### 🗘️ Ruta estimada en mapa:")
+        st_folium(m, width=1200, height=500)
 
-                if estado == "disponible":
-                    if st.session_state.asignando == row['matricula']:
-                        st.session_state.chofer_inputs[row['matricula']] = st.text_input(f"Tractora para {row['matricula']}", key=f"input_{row['matricula']}")
-                        st.session_state.jefe_inputs[row['matricula']] = st.text_input(f"Jefe de tráfico que asigna {row['matricula']}", key=f"jefe_{row['matricula']}")
-                        st.session_state.observaciones_inputs[row['matricula']] = st.text_input(f"Observaciones para {row['matricula']}", key=f"obs_{row['matricula']}")
-                        if st.button("Confirmar asignación", key=f"confirmar_{row['matricula']}"):
-                            tractora = st.session_state.chofer_inputs[row['matricula']].strip()
-                            jefe = st.session_state.jefe_inputs[row['matricula']].strip()
-                            observaciones = st.session_state.observaciones_inputs[row['matricula']].strip()
-                            if tractora and jefe:
-                                remolques.loc[remolques['matricula'] == row['matricula'], ["estado", "taller", "fecha", "observaciones"]] = ["asignado", tractora, hoy.strftime("%Y-%m-%d"), observaciones]
-                                registrar_movimiento(row['matricula'], "Asignado", row.get("tipo", ""), tractora, f"Asignado por {jefe}. {observaciones}")
-                                guardar_tabla("remolques", remolques)
-                                st.session_state.asignando = None
-                                st.success(f"✅ {row['matricula']} asignado a {tractora} por {jefe}")
-                                st.stop()
-                            else:
-                                st.warning("Debes introducir tanto la tractora como el nombre del jefe de tráfico.")
-                        if st.button("Cancelar", key=f"cancelar_{row['matricula']}"):
-                            st.session_state.asignando = None
-                    else:
-                        if st.button(f"Asignar {row['matricula']}", key=f"asignar_{row['matricula']}"):
-                            st.session_state.asignando = row['matricula']
-
-                elif estado == "asignado":
-                    if st.button(f"Finalizar {row['matricula']}", key=f"finalizar_{row['matricula']}"):
-                        remolques.loc[remolques['matricula'] == row['matricula'], ["estado", "taller"]] = ["disponible", ""]
-                        registrar_movimiento(row['matricula'], "Finalización de uso", row.get("tipo", ""), row.get("taller", ""))
-                        guardar_tabla("remolques", remolques)
-                        st.success(f"✅ {row['matricula']} marcado como disponible")
-                        st.stop()
-
-                elif estado == "mantenimiento":
-                    parking_reparado = st.text_input(f"Parking donde queda {row['matricula']}", key=f"parking_{row['matricula']}")
-                    if st.button(f"Reparado {row['matricula']}", key=f"reparado_{row['matricula']}"):
-                        if parking_reparado.strip():
-                            remolques.loc[remolques['matricula'] == row['matricula'], ["estado", "parking"]] = ["disponible", parking_reparado.strip()]
-                            registrar_movimiento(row['matricula'], "Fin mantenimiento", row.get("tipo", ""), observaciones=f"Queda en {parking_reparado.strip()}")
-                            guardar_tabla("remolques", remolques)
-                            st.success(f"🔧 {row['matricula']} reparado y ubicado en {parking_reparado.strip()}")
-                            st.stop()
-                        else:
-                            st.warning("Debes indicar el parking donde queda el remolque.")
-
-    st.divider()
-
-    with st.expander("➕ Registrar nuevo mantenimiento", expanded=False):
-        matricula = st.text_input("Matrícula").strip().upper()
-        tipo_detectado = subtipos[subtipos["matricula"].str.strip().str.upper() == matricula]["subtipo"].values
-        tipo = tipo_detectado[0] if len(tipo_detectado) > 0 else st.selectbox("Tipo de vehículo", ["LONA", "FRIGO MONO", "FRIGO MULTI", "ASTILLERA", "PORTABOBINAS"])
-        mantenimiento = st.text_input("Descripción del mantenimiento")
-        observaciones = st.text_input("Observaciones")
-        fecha = st.date_input("Fecha de entrada")
-        taller = st.text_input("Taller")
-
-        if st.button("Registrar en mantenimiento"):
-            nuevo = pd.DataFrame([{ "matricula": matricula, "tipo": tipo, "taller": taller, "fecha": fecha.strftime('%Y-%m-%d'), "parking": "", "estado": "mantenimiento", "observaciones": observaciones }])
-            if matricula in remolques["matricula"].values:
-                remolques = remolques[remolques["matricula"] != matricula]
-            remolques = pd.concat([remolques, nuevo], ignore_index=True)
-            registrar_movimiento(matricula, "Entrada a mantenimiento", tipo, taller, f"{mantenimiento}. {observaciones}")
-            guardar_tabla("remolques", remolques)
-            st.success(f"Remolque {matricula} registrado en mantenimiento.")
-
-    st.divider()
-    with st.expander("📁 Exportar historial"):
-        movimientos = cargar_tabla("movimientos")
-        output = BytesIO()
-        with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
-            movimientos.to_excel(writer, index=False, sheet_name="Historial")
-        output.seek(0)
-        st.download_button("📄 Descargar historial", data=output, file_name="historial_remolques.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-
-        st.markdown("---")
-        st.markdown("#### 🗑 Borrar historial de movimientos")
-        pwd = st.text_input("Introduce la contraseña para borrar el historial", type="password")
-
-        CONTRASENA = os.getenv("REMOLQUES_PASSWORD") or st.secrets.get("REMOLQUES_PASSWORD")
-
-        if st.button("Borrar historial"):
-            if pwd == CONTRASENA:
-                guardar_tabla("movimientos", pd.DataFrame(columns=["fecha_hora", "matricula", "accion", "tipo", "taller", "observaciones"]))
-                st.success("✅ Historial de movimientos eliminado correctamente.")
-            else:
-                st.error("❌ Contraseña incorrecta. No se ha eliminado el historial.")
-
-    
+def geocode(direccion, api_key):
+    url = "https://api.openrouteservice.org/geocode/search"
+    params = {
+        "api_key": api_key,
+        "text": direccion,
+        "boundary.country": "ES",
+        "size": 1
+    }
+    r = requests.get(url, params=params)
+    data = r.json()
+    if data.get("features"):
+        coord = data["features"][0]["geometry"]["coordinates"]
+        label = data["features"][0]["properties"]["label"]
+        return coord, label
+    else:
+        return None, None
