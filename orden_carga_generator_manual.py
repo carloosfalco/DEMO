@@ -17,11 +17,14 @@ def generar_enlace_maps(ubicacion):
     return f"https://www.google.com/maps/search/?api=1&query={query}"
 
 def generar_orden_carga_manual():
-    st.title("📦 Generador de Orden de Carga")
+    st.title("Generador de Orden de Carga")
     st.markdown("Completa los siguientes datos para generar una orden.")
 
     ida_vuelta = st.toggle("⇄ Ida y vuelta", value=st.session_state.get("ida_vuelta", False))
     st.session_state.ida_vuelta = ida_vuelta
+
+    # Check adicional: Necesario cinchado
+    necesario_cinchado = st.checkbox("Necesario cinchado", key="necesario_cinchado")
 
     if not ida_vuelta:
         entregar_de_seguido = st.checkbox("Entregar de seguido", key="entregar_seguido")
@@ -171,7 +174,10 @@ def generar_orden_carga_manual():
         mensaje += "\n\n".join(bloques)
 
         if temperatura_refrigerado:
-            mensaje += f"\n\n📦 Temperatura: {temperatura_refrigerado} en continuo, envía foto del display en el sitio de carga."
+            mensaje += f"\n\n🌡️ Temperatura: {temperatura_refrigerado} en continuo, envía foto del display en el sitio de carga."
+
+        if necesario_cinchado:
+            mensaje += f"\n\n📦 En esta carga será necesaria la estiva."
 
         if observaciones:
             mensaje += f"\n\n📌 {observaciones}"
