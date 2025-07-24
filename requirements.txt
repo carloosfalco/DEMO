@@ -16,5 +16,6 @@ pyairtable
 gspread
 oauth2client
 polyline
+streamlit-chat
 
 
