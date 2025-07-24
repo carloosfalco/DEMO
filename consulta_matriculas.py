@@ -37,6 +37,6 @@ def consulta_matriculas():
         respuesta = obtener_respuesta(user_input)
         st.session_state.chat_matriculas.append({"role": "assistant", "content": respuesta})
 
-    # Mostrar el historial del chat
-    for msg in st.session_state.chat_matriculas:
-        message(msg["content"], is_user=(msg["role"] == "user"))
+    # Mostrar el historial del chat con claves únicas
+    for i, msg in enumerate(st.session_state.chat_matriculas):
+        message(msg["content"], is_user=(msg["role"] == "user"), key=f"msg_{i}")
