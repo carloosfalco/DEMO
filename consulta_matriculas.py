@@ -1,21 +1,42 @@
 import streamlit as st
-import pandas as pd
-from datetime import datetime
-import json
-from google.oauth2 import service_account
-import gspread
+from streamlit_chat import message
+import requests
 
 def consulta_matriculas():
-    st.title("🤖 Instrucciones para usar el Bot de Telegram")
-    st.markdown("""
-    Ahora puedes realizar consultar a cerca de tractoras o remolques desde Telegram.
+    st.title("🔎 Consulta de matrículas")
+    st.markdown("Escribe una consulta en lenguaje natural para saber quién lleva una tractora, remolque o qué tiene un chófer asignado.")
 
-    ### 👉 ¿Cómo usar el bot?
-    1. Abre la app de Telegram.
-    2. Busca el bot por su nombre: `@virosque_consulta_bot`.
-    3. Introduce la contraseña VrTc4489
-    4. Puedes escribirle en lenguaje natural cosas como:
-        - `¿Quién lleva la 2243?`
-        - `¿Quién lleva el remolque R6654BCD?`
-    5. El bot responderá a tu consulta.
-    """)
+    # Función que se conecta al webhook de Make
+    def obtener_respuesta(input_usuario):
+        url_webhook = "https://hook.eu2.make.com/vkzk2hkl67dn1d5gyszmbjn8duoyi9c3"
+
+        try:
+            respuesta = requests.post(
+                url_webhook,
+                json={"consulta": input_usuario},
+                timeout=10
+            )
+
+            if respuesta.status_code == 200:
+                datos = respuesta.json()
+                return datos.get("respuesta", "⚠️ La respuesta no tiene contenido.")
+            else:
+                return f"⚠️ Error {respuesta.status_code} al conectar con Make."
+
+        except Exception as e:
+            return f"⚠️ Error de conexión: {str(e)}"
+
+    # Inicializar historial del chat
+    if "chat_matriculas" not in st.session_state:
+        st.session_state.chat_matriculas = []
+
+    # Caja de entrada del usuario
+    user_input = st.chat_input("¿Qué quieres consultar?")
+    if user_input:
+        st.session_state.chat_matriculas.append({"role": "user", "content": user_input})
+        respuesta = obtener_respuesta(user_input)
+        st.session_state.chat_matriculas.append({"role": "assistant", "content": respuesta})
+
+    # Mostrar el historial del chat
+    for msg in st.session_state.chat_matriculas:
+        message(msg["content"], is_user=(msg["role"] == "user"))
