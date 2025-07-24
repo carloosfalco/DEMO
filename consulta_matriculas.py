@@ -1,6 +1,7 @@
 import streamlit as st
 from streamlit_chat import message
 import requests
+import uuid
 
 def consulta_matriculas():
     st.title("🔎 Consulta de matrículas")
@@ -14,7 +15,7 @@ def consulta_matriculas():
             respuesta = requests.post(
                 url_webhook,
                 json={"consulta": input_usuario},
-                timeout=10
+                timeout=20  # Tiempo aumentado a 20 segundos
             )
 
             if respuesta.status_code == 200:
@@ -23,6 +24,8 @@ def consulta_matriculas():
             else:
                 return f"⚠️ Error {respuesta.status_code} al conectar con Make."
 
+        except requests.exceptions.Timeout:
+            return "⚠️ Tiempo de espera agotado. Make tardó demasiado en responder."
         except Exception as e:
             return f"⚠️ Error de conexión: {str(e)}"
 
@@ -38,5 +41,9 @@ def consulta_matriculas():
         st.session_state.chat_matriculas.append({"role": "assistant", "content": respuesta})
 
     # Mostrar el historial del chat con claves únicas
-    for i, msg in enumerate(st.session_state.chat_matriculas):
-        message(msg["content"], is_user=(msg["role"] == "user"), key=f"msg_{i}")
+    for msg in st.session_state.chat_matriculas:
+        message(
+            msg["content"],
+            is_user=(msg["role"] == "user"),
+            key=f"msg_{uuid.uuid4()}"
+        )
