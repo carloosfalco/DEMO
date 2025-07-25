@@ -8,8 +8,8 @@ def consulta_matriculas():
     st.title("🔎 Consulta de matrículas")
     st.markdown("Escribe una consulta en lenguaje natural para saber quién lleva una tractora, remolque o qué tiene un chófer asignado.")
 
-    # Cargar el logo local para usarlo como avatar
-    logo_virosque = Image.open("/mnt/data/1dbdde11-5d43-41f2-858b-c552c0ad9088.png")
+    # Cargar el logo desde el mismo directorio que este script
+    logo_virosque = Image.open("logo-virosque2-01.png")
 
     # Función que se conecta al webhook de Make
     def obtener_respuesta(input_usuario):
@@ -24,14 +24,19 @@ def consulta_matriculas():
 
             if respuesta.status_code == 200:
                 datos = respuesta.json()
-                return datos.get("respuesta", "⚠️ La respuesta no tiene contenido.")
+                raw = datos.get("respuesta")
+                # Soporta múltiples líneas separadas
+                if isinstance(raw, str):
+                    return [linea.strip() for linea in raw.split("\n") if linea.strip()]
+                else:
+                    return [raw]
             else:
-                return f"⚠️ Error {respuesta.status_code} al conectar con Make."
+                return [f"⚠️ Error {respuesta.status_code} al conectar con Make."]
 
         except requests.exceptions.Timeout:
-            return "⚠️ Tiempo de espera agotado. Make tardó demasiado en responder."
+            return ["⚠️ Tiempo de espera agotado. Make tardó demasiado en responder."]
         except Exception as e:
-            return f"⚠️ Error de conexión: {str(e)}"
+            return [f"⚠️ Error de conexión: {str(e)}"]
 
     # Inicializar historial del chat
     if "chat_matriculas" not in st.session_state:
@@ -41,14 +46,16 @@ def consulta_matriculas():
     user_input = st.chat_input("¿Qué quieres consultar?")
     if user_input:
         st.session_state.chat_matriculas.append({"role": "user", "content": user_input})
-        respuesta = obtener_respuesta(user_input)
-        st.session_state.chat_matriculas.append({"role": "assistant", "content": respuesta})
+        respuestas = obtener_respuesta(user_input)
+        for r in respuestas:
+            st.session_state.chat_matriculas.append({"role": "assistant", "content": r})
 
-    # Mostrar historial con el logo como avatar para ambos
+    # Mostrar historial con el logo como avatar personalizado en ambos roles
     for msg in st.session_state.chat_matriculas:
-        message(
-            msg["content"],
-            is_user=(msg["role"] == "user"),
-            avatar=logo_virosque,
-            key=f"msg_{uuid.uuid4()}"
-        )
+        if isinstance(msg, dict) and "content" in msg and "role" in msg:
+            message(
+                msg["content"],
+                is_user=(msg["role"] == "user"),
+                avatar=logo_virosque,
+                key=f"msg_{uuid.uuid4()}"
+            )
