@@ -54,6 +54,15 @@ def consulta_matriculas():
                     with cols[0]:
                         st.image(logo_virosque, width=40)
                     with cols[1]:
-                        st.markdown(f"<div style='padding:8px 12px;background-color:#f0f2f6;border-radius:10px'>{msg['content']}</div>", unsafe_allow_html=True)
+                        st.markdown(
+                            f"""
+                            <div style='padding:10px 15px; background-color:#f0f2f6;
+                                        border-radius:10px; color:#000000;
+                                        font-size:16px; line-height:1.5;'>
+                                {msg['content']}
+                            </div>
+                            """,
+                            unsafe_allow_html=True
+                        )
             else:
                 message(msg["content"], is_user=False, key=f"msg_{uuid.uuid4()}")
