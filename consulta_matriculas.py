@@ -7,10 +7,10 @@ def consulta_matriculas():
     st.title("🔎 Consulta de matrículas")
     st.markdown("Escribe una consulta en lenguaje natural para saber quién lleva una tractora, remolque o qué tiene un chófer asignado.")
 
-    # ✅ Ruta al logo de Virosque (solo para el usuario)
+    # ✅ URL pública del logo de Virosque (aparecerá en los mensajes del usuario)
     logo_virosque = "https://raw.githubusercontent.com/carloosfalco/DEMO/main/logo-virosque2-01.png"
 
-    # Función que se conecta a Make
+    # Función para obtener la respuesta desde Make
     def obtener_respuesta(input_usuario):
         url_webhook = "https://hook.eu2.make.com/vkzk2hkl67dn1d5gyszmbjn8duoyi9c3"
         try:
@@ -33,7 +33,7 @@ def consulta_matriculas():
         except Exception as e:
             return [f"⚠️ Error de conexión: {str(e)}"]
 
-    # Inicializar historial
+    # Inicializar el historial del chat
     if "chat_matriculas" not in st.session_state:
         st.session_state.chat_matriculas = []
 
@@ -45,10 +45,12 @@ def consulta_matriculas():
         for r in respuestas:
             st.session_state.chat_matriculas.append({"role": "assistant", "content": r})
 
-    # Mostrar historial con logo Virosque en los mensajes del usuario
+    # Mostrar historial con el avatar Virosque en los mensajes del usuario
     for msg in st.session_state.chat_matriculas:
         if isinstance(msg, dict) and "content" in msg and "role" in msg:
             message(
                 msg["content"],
                 is_user=(msg["role"] == "user"),
-                avatar=logo_virosque if msg_
+                avatar=logo_virosque if msg["role"] == "user" else None,
+                key=f"msg_{uuid.uuid4()}"
+            )
