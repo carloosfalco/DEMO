@@ -2,14 +2,13 @@ import streamlit as st
 from streamlit_chat import message
 import requests
 import uuid
-from PIL import Image
 
 def consulta_matriculas():
     st.title("🔎 Consulta de matrículas")
     st.markdown("Escribe una consulta en lenguaje natural para saber quién lleva una tractora, remolque o qué tiene un chófer asignado.")
 
-    # Cargar el logo desde el mismo directorio que este script
-    logo_virosque = Image.open("logo-virosque2-01.png")
+    # Ruta al logo local
+    logo_virosque = "logo-virosque2-01.png"
 
     # Función que se conecta al webhook de Make
     def obtener_respuesta(input_usuario):
@@ -25,7 +24,6 @@ def consulta_matriculas():
             if respuesta.status_code == 200:
                 datos = respuesta.json()
                 raw = datos.get("respuesta")
-                # Soporta múltiples líneas separadas
                 if isinstance(raw, str):
                     return [linea.strip() for linea in raw.split("\n") if linea.strip()]
                 else:
@@ -50,7 +48,7 @@ def consulta_matriculas():
         for r in respuestas:
             st.session_state.chat_matriculas.append({"role": "assistant", "content": r})
 
-    # Mostrar historial con el logo como avatar personalizado en ambos roles
+    # Mostrar historial con el logo como avatar en todos los mensajes
     for msg in st.session_state.chat_matriculas:
         if isinstance(msg, dict) and "content" in msg and "role" in msg:
             message(
