@@ -177,7 +177,7 @@ def generar_orden_carga_manual():
             mensaje += f"\n\n🌡️ Temperatura: {temperatura_refrigerado} en continuo, envía foto del display en el sitio de carga."
 
         if necesario_cinchado:
-            mensaje += f"\n\n📦 En esta carga será necesaria la estiva."
+            mensaje += f"\n\n📦 En esta carga será necesaria la estiba."
 
         if observaciones:
             mensaje += f"\n\n📌 {observaciones}"
