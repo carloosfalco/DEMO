@@ -7,10 +7,10 @@ def consulta_matriculas():
     st.title("🔎 Consulta de matrículas")
     st.markdown("Escribe una consulta en lenguaje natural para saber quién lleva una tractora, remolque o qué tiene un chófer asignado.")
 
-    # ✅ URL pública del logo de Virosque (aparecerá en los mensajes del usuario)
+    # Ruta pública del logo de Virosque
     logo_virosque = "https://raw.githubusercontent.com/carloosfalco/DEMO/main/logo-virosque2-01.png"
 
-    # Función para obtener la respuesta desde Make
+    # Función para consultar al webhook de Make
     def obtener_respuesta(input_usuario):
         url_webhook = "https://hook.eu2.make.com/vkzk2hkl67dn1d5gyszmbjn8duoyi9c3"
         try:
@@ -33,7 +33,7 @@ def consulta_matriculas():
         except Exception as e:
             return [f"⚠️ Error de conexión: {str(e)}"]
 
-    # Inicializar el historial del chat
+    # Inicializar historial
     if "chat_matriculas" not in st.session_state:
         st.session_state.chat_matriculas = []
 
@@ -45,12 +45,15 @@ def consulta_matriculas():
         for r in respuestas:
             st.session_state.chat_matriculas.append({"role": "assistant", "content": r})
 
-    # Mostrar historial con el avatar Virosque en los mensajes del usuario
+    # Mostrar el historial
     for msg in st.session_state.chat_matriculas:
         if isinstance(msg, dict) and "content" in msg and "role" in msg:
-            message(
-                msg["content"],
-                is_user=(msg["role"] == "user"),
-                avatar=logo_virosque if msg["role"] == "user" else None,
-                key=f"msg_{uuid.uuid4()}"
-            )
+            if msg["role"] == "user":
+                with st.container():
+                    cols = st.columns([0.1, 0.9])
+                    with cols[0]:
+                        st.image(logo_virosque, width=40)
+                    with cols[1]:
+                        st.markdown(f"<div style='padding:8px 12px;background-color:#f0f2f6;border-radius:10px'>{msg['content']}</div>", unsafe_allow_html=True)
+            else:
+                message(msg["content"], is_user=False, key=f"msg_{uuid.uuid4()}")
