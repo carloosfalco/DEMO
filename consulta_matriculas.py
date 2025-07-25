@@ -7,7 +7,7 @@ def consulta_matriculas():
     st.title("🔎 Consulta de matrículas")
     st.markdown("Escribe una consulta en lenguaje natural para saber quién lleva una tractora, remolque o qué tiene un chófer asignado.")
 
-    logo_virosque = "https://github.com/carloosfalco/DEMO/blob/main/logo_peque%C3%B1o_virosque.png"
+    logo_virosque = "https://github.com/carloosfalco/DEMO/blob/main/logo_peque_virosque.png"
 
     def obtener_respuesta(input_usuario):
         url_webhook = "https://hook.eu2.make.com/vkzk2hkl67dn1d5gyszmbjn8duoyi9c3"
