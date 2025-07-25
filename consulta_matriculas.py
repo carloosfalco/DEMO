@@ -50,10 +50,8 @@ def consulta_matriculas():
         if isinstance(msg, dict) and "content" in msg and "role" in msg:
             if msg["role"] == "user":
                 with st.container():
-                    cols = st.columns([0.1, 0.9])
+                    cols = st.columns([0.9, 0.1])  # Mensaje a la izquierda, logo a la derecha
                     with cols[0]:
-                        st.image(logo_virosque, width=40)
-                    with cols[1]:
                         st.markdown(
                             f"""
                             <div style='padding:10px 15px; background-color:#f0f2f6;
@@ -64,5 +62,7 @@ def consulta_matriculas():
                             """,
                             unsafe_allow_html=True
                         )
+                    with cols[1]:
+                        st.image(logo_virosque, width=40)
             else:
                 message(msg["content"], is_user=False, key=f"msg_{uuid.uuid4()}")
