@@ -7,20 +7,18 @@ def consulta_matriculas():
     st.title("🔎 Consulta de matrículas")
     st.markdown("Escribe una consulta en lenguaje natural para saber quién lleva una tractora, remolque o qué tiene un chófer asignado.")
 
-    # ✅ URL pública del logo de Virosque
+    # ✅ Ruta al logo de Virosque (solo para el usuario)
     logo_virosque = "https://raw.githubusercontent.com/carloosfalco/DEMO/main/logo-virosque2-01.png"
 
-    # Función que se conecta al webhook de Make
+    # Función que se conecta a Make
     def obtener_respuesta(input_usuario):
         url_webhook = "https://hook.eu2.make.com/vkzk2hkl67dn1d5gyszmbjn8duoyi9c3"
-
         try:
             respuesta = requests.post(
                 url_webhook,
                 json={"consulta": input_usuario},
                 timeout=60
             )
-
             if respuesta.status_code == 200:
                 datos = respuesta.json()
                 raw = datos.get("respuesta")
@@ -30,13 +28,12 @@ def consulta_matriculas():
                     return [raw]
             else:
                 return [f"⚠️ Error {respuesta.status_code} al conectar con Make."]
-
         except requests.exceptions.Timeout:
             return ["⚠️ Tiempo de espera agotado. Make tardó demasiado en responder."]
         except Exception as e:
             return [f"⚠️ Error de conexión: {str(e)}"]
 
-    # Inicializar historial del chat
+    # Inicializar historial
     if "chat_matriculas" not in st.session_state:
         st.session_state.chat_matriculas = []
 
@@ -48,12 +45,10 @@ def consulta_matriculas():
         for r in respuestas:
             st.session_state.chat_matriculas.append({"role": "assistant", "content": r})
 
-    # Mostrar historial con avatar del bot personalizado
+    # Mostrar historial con logo Virosque en los mensajes del usuario
     for msg in st.session_state.chat_matriculas:
         if isinstance(msg, dict) and "content" in msg and "role" in msg:
             message(
                 msg["content"],
                 is_user=(msg["role"] == "user"),
-                avatar=logo_virosque if msg["role"] == "assistant" else None,
-                key=f"msg_{uuid.uuid4()}"
-            )
+                avatar=logo_virosque if msg_
