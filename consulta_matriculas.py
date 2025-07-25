@@ -7,10 +7,8 @@ def consulta_matriculas():
     st.title("🔎 Consulta de matrículas")
     st.markdown("Escribe una consulta en lenguaje natural para saber quién lleva una tractora, remolque o qué tiene un chófer asignado.")
 
-    # Ruta pública del logo de Virosque
     logo_virosque = "https://raw.githubusercontent.com/carloosfalco/DEMO/main/logo-virosque2-01.png"
 
-    # Función para consultar al webhook de Make
     def obtener_respuesta(input_usuario):
         url_webhook = "https://hook.eu2.make.com/vkzk2hkl67dn1d5gyszmbjn8duoyi9c3"
         try:
@@ -33,11 +31,9 @@ def consulta_matriculas():
         except Exception as e:
             return [f"⚠️ Error de conexión: {str(e)}"]
 
-    # Inicializar historial
     if "chat_matriculas" not in st.session_state:
         st.session_state.chat_matriculas = []
 
-    # Entrada del usuario
     user_input = st.chat_input("¿Qué quieres consultar?")
     if user_input:
         st.session_state.chat_matriculas.append({"role": "user", "content": user_input})
@@ -45,24 +41,21 @@ def consulta_matriculas():
         for r in respuestas:
             st.session_state.chat_matriculas.append({"role": "assistant", "content": r})
 
-    # Mostrar el historial
     for msg in st.session_state.chat_matriculas:
         if isinstance(msg, dict) and "content" in msg and "role" in msg:
             if msg["role"] == "user":
-                with st.container():
-                    cols = st.columns([0.9, 0.1])  # Mensaje a la izquierda, logo a la derecha
-                    with cols[0]:
-                        st.markdown(
-                            f"""
-                            <div style='padding:10px 15px; background-color:#f0f2f6;
-                                        border-radius:10px; color:#000000;
-                                        font-size:16px; line-height:1.5;'>
-                                {msg['content']}
-                            </div>
-                            """,
-                            unsafe_allow_html=True
-                        )
-                    with cols[1]:
-                        st.image(logo_virosque, width=40)
+                st.markdown(
+                    f"""
+                    <div style='display: flex; justify-content: flex-end; margin-top: 10px;'>
+                        <div style='background-color:#f0f2f6; color:#000; padding:10px 15px;
+                                    border-radius:10px; max-width: 70%; font-size:16px;
+                                    line-height:1.5; word-wrap: break-word; text-align: left;'>
+                            {msg["content"]}
+                        </div>
+                        <img src="{logo_virosque}" width="40" style="margin-left: 8px; border-radius: 50%;" />
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
             else:
                 message(msg["content"], is_user=False, key=f"msg_{uuid.uuid4()}")
