@@ -7,8 +7,8 @@ def consulta_matriculas():
     st.title("🔎 Consulta de matrículas")
     st.markdown("Escribe una consulta en lenguaje natural para saber quién lleva una tractora, remolque o qué tiene un chófer asignado.")
 
-    # Ruta al logo local
-    logo_virosque = "logo-virosque2-01.png"
+    # ✅ URL pública del logo de Virosque
+    logo_virosque = "https://raw.githubusercontent.com/carloosfalco/DEMO/main/logo-virosque2-01.png"
 
     # Función que se conecta al webhook de Make
     def obtener_respuesta(input_usuario):
@@ -48,12 +48,12 @@ def consulta_matriculas():
         for r in respuestas:
             st.session_state.chat_matriculas.append({"role": "assistant", "content": r})
 
-    # Mostrar historial con el logo como avatar en todos los mensajes
+    # Mostrar historial con avatar del bot personalizado
     for msg in st.session_state.chat_matriculas:
         if isinstance(msg, dict) and "content" in msg and "role" in msg:
             message(
                 msg["content"],
                 is_user=(msg["role"] == "user"),
-                avatar=logo_virosque,
+                avatar=logo_virosque if msg["role"] == "assistant" else None,
                 key=f"msg_{uuid.uuid4()}"
             )
