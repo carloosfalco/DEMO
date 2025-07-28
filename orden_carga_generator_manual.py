@@ -114,7 +114,7 @@ def generar_orden_carga_manual():
                 bloque = []
                 if origenes[i][0]:
                     bloque.append(f"📍 Carga {contador} ({formatear_fecha_con_dia(fechas_carga[i])}):")
-                    linea = f"  - *{origenes[i][0]}*"
+                    linea = f"  {contador}- *{origenes[i][0]}*"
                     if origenes[i][1]:
                         linea += f" ({formatear_hora(origenes[i][1])})"
                     bloque.append(linea)
@@ -128,8 +128,8 @@ def generar_orden_carga_manual():
 
                 if destinos[i][0]:
                     contador += 1
-                    bloque.append(f"📍 Descarga {contador} ({formatear_fecha_con_dia(destinos[i][1])}):")
-                    linea = f"  - *{destinos[i][0]}*"
+                    bloque.append(f"📍 Descarga ({formatear_fecha_con_dia(destinos[i][1])}):")
+                    linea = f"  {contador}- *{destinos[i][0]}*"
                     if destinos[i][2]:
                         linea += f" ({formatear_hora(destinos[i][2])})"
                     bloque.append(linea)
