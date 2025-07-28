@@ -120,16 +120,30 @@ def generar_orden_carga_manual():
                     if hora:
                         linea += f" ({formatear_hora(hora)})"
                     cargas.append(linea)
+                    if ref_carga:
+                        ref_lines = ref_carga.splitlines()
+                        cargas.append(f"    Ref. carga: {ref_lines[0]}")
+                        for line in ref_lines[1:]:
+                            cargas.append(f"                 {line}")
+                    if incluir_link:
+                        cargas.append(f"    🌐 {generar_enlace_maps(origen)}")
             if cargas:
                 mensaje += f"📍 Cargas ({formatear_fecha_con_dia(fecha_carga_unica)}):\n\n" + "\n".join(cargas) + "\n"
 
             descargas = []
-            for i, (destino, _, hora_descarga, _, _) in enumerate(destinos):
+            for i, (destino, _, hora_descarga, ref_cliente, incluir_link) in enumerate(destinos):
                 if destino:
                     linea = f" {i+1} - *{destino}*"
                     if hora_descarga:
                         linea += f" ({formatear_hora(hora_descarga)})"
                     descargas.append(linea)
+                    if ref_cliente:
+                        ref_lines = ref_cliente.splitlines()
+                        descargas.append(f"    Ref. cliente: {ref_lines[0]}")
+                        for line in ref_lines[1:]:
+                            descargas.append(f"                 {line}")
+                    if incluir_link:
+                        descargas.append(f"    🌐 {generar_enlace_maps(destino)}")
             if descargas:
                 mensaje += f"\n📍 Descargas ({formatear_fecha_con_dia(fecha_descarga_comun)}):\n\n" + "\n".join(descargas) + "\n"
 
@@ -155,3 +169,4 @@ def generar_orden_carga_manual():
 
         st.markdown("### ✉️ Orden generada:")
         st.code(mensaje.strip(), language="markdown")
+
