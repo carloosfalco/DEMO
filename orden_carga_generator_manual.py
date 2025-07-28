@@ -31,7 +31,6 @@ def generar_orden_carga_manual():
     ida_vuelta = st.toggle("⇄ Ida y vuelta", value=st.session_state.get("ida_vuelta", False))
     st.session_state.ida_vuelta = ida_vuelta
 
-    # Check adicional: Necesario cinchado
     necesario_cinchado = st.checkbox("Necesario cinchado", key="necesario_cinchado")
 
     if not ida_vuelta:
@@ -122,9 +121,9 @@ def generar_orden_carga_manual():
                     cargas.append(linea)
                     if ref_carga:
                         ref_lines = ref_carga.splitlines()
-                        cargas.append(f"    Ref. carga: {ref_lines[0]}")
-                        for line in ref_lines[1:]:
-                            cargas.append(f"                 {line}")
+                        cargas.append("    Ref. carga:")
+                        for line in ref_lines:
+                            cargas.append(f"      {line}")
                     if incluir_link:
                         cargas.append(f"    🌐 {generar_enlace_maps(origen)}")
             if cargas:
@@ -139,9 +138,9 @@ def generar_orden_carga_manual():
                     descargas.append(linea)
                     if ref_cliente:
                         ref_lines = ref_cliente.splitlines()
-                        descargas.append(f"    Ref. cliente: {ref_lines[0]}")
-                        for line in ref_lines[1:]:
-                            descargas.append(f"                 {line}")
+                        descargas.append("    Ref. cliente:")
+                        for line in ref_lines:
+                            descargas.append(f"      {line}")
                     if incluir_link:
                         descargas.append(f"    🌐 {generar_enlace_maps(destino)}")
             if descargas:
@@ -169,4 +168,3 @@ def generar_orden_carga_manual():
 
         st.markdown("### ✉️ Orden generada:")
         st.code(mensaje.strip(), language="markdown")
-
