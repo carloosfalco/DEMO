@@ -16,6 +16,9 @@ def generar_enlace_maps(ubicacion):
     query = urllib.parse.quote_plus(ubicacion)
     return f"https://www.google.com/maps/search/?api=1&query={query}"
 
+def formatear_hora(hora):
+    return f"{hora.strip()}h" if hora and not hora.strip().endswith("h") else hora.strip()
+
 def generar_orden_carga_manual():
     st.title("Generador de Orden de Carga")
     st.markdown("Completa los siguientes datos para generar una orden.")
@@ -105,14 +108,15 @@ def generar_orden_carga_manual():
         mensaje += f" esta es la orden de carga:\n\n"
 
         bloques = []
+        contador = 1
         if ida_vuelta:
             for i in range(2):
                 bloque = []
                 if origenes[i][0]:
-                    bloque.append(f"📍 Carga {i+1} ({formatear_fecha_con_dia(fechas_carga[i])}):")
+                    bloque.append(f"📍 Carga {contador} ({formatear_fecha_con_dia(fechas_carga[i])}):")
                     linea = f"  - *{origenes[i][0]}*"
                     if origenes[i][1]:
-                        linea += f" ({origenes[i][1]})"
+                        linea += f" ({formatear_hora(origenes[i][1])})"
                     bloque.append(linea)
                     if origenes[i][2]:
                         ref_lines = origenes[i][2].splitlines()
@@ -123,10 +127,11 @@ def generar_orden_carga_manual():
                         bloque.append(f"    🌐 {generar_enlace_maps(origenes[i][0])}")
 
                 if destinos[i][0]:
-                    bloque.append(f"📍 Descarga {i+1} ({formatear_fecha_con_dia(destinos[i][1])}):")
+                    contador += 1
+                    bloque.append(f"📍 Descarga {contador} ({formatear_fecha_con_dia(destinos[i][1])}):")
                     linea = f"  - *{destinos[i][0]}*"
                     if destinos[i][2]:
-                        linea += f" ({destinos[i][2]})"
+                        linea += f" ({formatear_hora(destinos[i][2])})"
                     bloque.append(linea)
                     if destinos[i][3]:
                         ref_lines = destinos[i][3].splitlines()
@@ -142,7 +147,8 @@ def generar_orden_carga_manual():
                 if origen:
                     linea = f"  - *{origen}*"
                     if hora:
-                        linea += f" ({hora})"
+                        linea += f" ({formatear_hora(hora)})"
+                    cargas.append(f"📍 Carga {i+1}:")
                     cargas.append(linea)
                     if ref_carga:
                         ref_lines = ref_carga.splitlines()
@@ -159,7 +165,8 @@ def generar_orden_carga_manual():
                 if destino:
                     linea = f"  - *{destino}*"
                     if hora_descarga:
-                        linea += f" ({hora_descarga})"
+                        linea += f" ({formatear_hora(hora_descarga)})"
+                    descargas.append(f"📍 Descarga {i+1}:")
                     descargas.append(linea)
                     if ref_cliente:
                         ref_lines = ref_cliente.splitlines()
@@ -177,7 +184,7 @@ def generar_orden_carga_manual():
             mensaje += f"\n\n🌡️ Temperatura: {temperatura_refrigerado} en continuo, envía foto del display en el sitio de carga."
 
         if necesario_cinchado:
-            mensaje += f"\n\n📦 En esta carga será necesaria la estiba."
+            mensaje += f"\n\n📦 En esta carga será necesaria la estiva."
 
         if observaciones:
             mensaje += f"\n\n📌 {observaciones}"
