@@ -34,10 +34,10 @@ def ruta_camion_here(origen_coord, destino_coord, paradas, api_key):
         "destination": waypoints[-1],
         "return": "polyline,summary",
         "apikey": api_key,
-        # Valores numéricos, sin 'm'
-        "truck[height]": 4.0,
-        "truck[weight]": 40000,
-        "truck[axleCount]": 4
+        # HERE requiere cadenas, sin unidades ni decimales flotantes
+        "truck[height]": "4",
+        "truck[weight]": "40000",
+        "truck[axleCount]": "4"
     }
 
     if len(waypoints) > 2:
