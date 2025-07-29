@@ -5,12 +5,10 @@ from datetime import datetime, timedelta
 import folium
 from streamlit_folium import st_folium
 from PIL import Image
-import polyline
 import base64
+from here_location_services import flexpolyline
 
 HERE_API_KEY = "XfOePE686kVgu8UfeT8BxvJGAE5bUBipiXdOhD61MwA"
-
-# ---------------------- FUNCIONES ----------------------
 
 def geocode_here(direccion, api_key):
     url = "https://geocode.search.hereapi.com/v1/geocode"
@@ -34,9 +32,9 @@ def ruta_camion_here(origen_coord, destino_coord, paradas, api_key):
         "destination": destination,
         "return": "polyline,summary",
         "apikey": api_key,
-        "truck[height]": "4",
-        "truck[weight]": "40000",
-        "truck[axleCount]": "4"
+        "truck[height]": 4,
+        "truck[weight]": 40000,
+        "truck[axleCount]": 4
     }
 
     for i, v in enumerate(via):
@@ -49,8 +47,6 @@ def horas_y_minutos(valor_horas):
     horas = int(valor_horas)
     minutos = int(round((valor_horas - horas) * 60))
     return f"{horas}h {minutos:02d}min"
-
-# ---------------------- INTERFAZ STREAMLIT ----------------------
 
 def planificador_rutas():
     st.markdown("""
@@ -122,12 +118,14 @@ def planificador_rutas():
 
         lineas = []
         for section in ruta["routes"][0]["sections"]:
-            if "polyline" in section and section["polyline"]:
-                decoded = polyline.decode(section["polyline"])
-                lineas.extend(decoded)
+            poly = section.get("polyline")
+            if poly:
+                coords = flexpolyline.decode(poly)
+                for lat, lon in coords:
+                    lineas.append([lat, lon])
 
         if not lineas:
-            st.error("❌ No se pudo decodificar la polilínea de la ruta.")
+            st.error("❌ No se pudo decodificar ninguna polilínea de la ruta.")
             return
 
         st.markdown("### 📊 Datos de la ruta")
@@ -145,13 +143,12 @@ def planificador_rutas():
             etiqueta = " (día siguiente)" if llegada_tras_descanso.date() > hora_llegada.date() else ""
             col5.metric("🛌 Llegada + descanso", llegada_tras_descanso.strftime("%H:%M") + etiqueta)
 
-        linea_latlon = [[lat, lon] for lon, lat in lineas]
-        m = folium.Map(location=linea_latlon[0], zoom_start=6)
+        m = folium.Map(location=lineas[0], zoom_start=6)
         folium.Marker(location=[coord_origen[1], coord_origen[0]], tooltip="📍 Origen").add_to(m)
         for idx, parada in enumerate(stops_list):
             folium.Marker(location=[parada[1], parada[0]], tooltip=f"Parada {idx + 1}").add_to(m)
         folium.Marker(location=[coord_destino[1], coord_destino[0]], tooltip="Destino").add_to(m)
-        folium.PolyLine(linea_latlon, color="blue", weight=5).add_to(m)
+        folium.PolyLine(lineas, color="blue", weight=5).add_to(m)
 
         st.markdown("### 🗘️ Ruta estimada en mapa:")
         st_folium(m, width=1200, height=500)
