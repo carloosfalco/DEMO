@@ -17,5 +17,6 @@ gspread
 oauth2client
 polyline
 streamlit-chat
+flexpolyline==0.1.0
 
 
