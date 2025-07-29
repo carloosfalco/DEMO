@@ -8,7 +8,7 @@ from PIL import Image
 import polyline
 
 # ⚡ Inserta aquí tu API Key de HERE
-HERE_API_KEY = "XfOePE686kVgu8UfeT8BxvJGAE5bUBipiXdOhD61MwAXfOePE686kVgu8UfeT8BxvJGAE5bUBipiXdOhD61MwAXfOePE686kVgu8UfeT8BxvJGAE5bUBipiXdOhD61MwA"
+HERE_API_KEY = "XfOePE686kVgu8UfeT8BxvJGAE5bUBipiXdOhD61MwA"
 
 # ---------------------- FUNCIONES ----------------------
 
