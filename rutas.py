@@ -5,10 +5,11 @@ from datetime import datetime, timedelta
 import folium
 from streamlit_folium import st_folium
 from PIL import Image
-import base64
-# Eliminamos flexpolyline para evitar errores de módulo y decodificamos manualmente si es necesario
 
 HERE_API_KEY = "XfOePE686kVgu8UfeT8BxvJGAE5bUBipiXdOhD61MwA"
+
+if 'route_result' not in st.session_state:
+    st.session_state['route_result'] = None
 
 def geocode_here(direccion, api_key):
     url = "https://geocode.search.hereapi.com/v1/geocode"
@@ -21,7 +22,6 @@ def geocode_here(direccion, api_key):
 
 def ruta_camion_here(origen_coord, destino_coord, paradas, api_key):
     url = "https://router.hereapi.com/v8/routes"
-
     origin = f"{origen_coord[1]},{origen_coord[0]}"
     destination = f"{destino_coord[1]},{destino_coord[0]}"
     via = [f"{p[1]},{p[0]}" for p in paradas]
@@ -32,7 +32,7 @@ def ruta_camion_here(origen_coord, destino_coord, paradas, api_key):
         "destination": destination,
         "return": "polyline,summary",
         "apikey": api_key,
-        "truck[height]": "4",  # valor como string
+        "truck[height]": "4",
         "truck[weight]": "40000",
         "truck[axleCount]": "4"
     }
@@ -49,35 +49,11 @@ def horas_y_minutos(valor_horas):
     return f"{horas}h {minutos:02d}min"
 
 def planificador_rutas():
-    st.markdown("""
-        <style>
-            body {background-color: #f5f5f5;}
-            .stButton>button {
-                background-color: #8D1B2D;
-                color: white;
-                border-radius: 6px;
-                padding: 0.6em 1em;
-                border: none;
-                font-weight: bold;
-            }
-            .stButton>button:hover {background-color: #a7283d; color: white;}
-        </style>
-    """, unsafe_allow_html=True)
-
-    logo = Image.open("logo-virosque2-01.png")
-    st.image(logo, width=250)
-    st.markdown("<h1 style='color:#8D1B2D;'>TMS</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='color:white; font-size: 18px; font-weight: bold;'>Planificador de rutas para camiones</p>", unsafe_allow_html=True)
-
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        origen = st.text_input("📍 Origen", value="Valencia, España")
-    with col2:
-        destino = st.text_input("🏁 Destino", value="Madrid, España")
-    with col3:
-        hora_salida_str = st.time_input("🕒 Hora de salida", value=datetime.strptime("08:00", "%H:%M")).strftime("%H:%M")
-
-    stops = st.text_area("➕ Paradas intermedias (una por línea)", placeholder="Ej: Albacete, España\nCuenca, España")
+    st.title("TMS - Planificador de rutas para camiones")
+    origen = st.text_input("📍 Origen", value="Valencia, España")
+    destino = st.text_input("🏁 Destino", value="Madrid, España")
+    hora_salida_str = st.time_input("🕒 Hora de salida", value=datetime.strptime("08:00", "%H:%M")).strftime("%H:%M")
+    stops = st.text_area("➕ Paradas intermedias (una por línea)")
 
     if st.button("🔍 Calcular Ruta"):
         coord_origen = geocode_here(origen, HERE_API_KEY)
@@ -97,6 +73,11 @@ def planificador_rutas():
             return
 
         ruta = ruta_camion_here(coord_origen, coord_destino, stops_list, HERE_API_KEY)
+        st.session_state['route_result'] = (ruta, coord_origen, coord_destino, stops_list, hora_salida_str)
+
+    if st.session_state['route_result']:
+        ruta, coord_origen, coord_destino, stops_list, hora_salida_str = st.session_state['route_result']
+
         if "routes" not in ruta:
             st.error("❌ Error al calcular la ruta con HERE.")
             st.json(ruta)
@@ -120,13 +101,8 @@ def planificador_rutas():
         for section in ruta["routes"][0]["sections"]:
             poly = section.get("polyline")
             if poly:
-                # HERE v8 usa flexible polyline codificado
-                try:
-                    import flexpolyline
-                    coords = flexpolyline.decode(poly)
-                except ImportError:
-                    st.error("❌ Necesitas instalar la librería flexpolyline para decodificar la ruta")
-                    return
+                import flexpolyline
+                coords = flexpolyline.decode(poly)
                 for lat, lon in coords:
                     lineas.append([lat, lon])
 
