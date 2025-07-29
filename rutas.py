@@ -8,12 +8,11 @@ from PIL import Image
 import polyline
 
 # ⚡ Inserta aquí tu API Key de HERE
-HERE_API_KEY = "XfOePE686kVgu8UfeT8BxvJGAE5bUBipiXdOhD61MwA"
+HERE_API_KEY = "TU_API_KEY_DE_HERE"
 
 # ---------------------- FUNCIONES ----------------------
 
 def geocode_here(direccion, api_key):
-    """Convierte dirección en coordenadas usando HERE."""
     url = "https://geocode.search.hereapi.com/v1/geocode"
     params = {"q": direccion, "apiKey": api_key, "in": "countryCode:ESP"}
     r = requests.get(url, params=params).json()
@@ -23,7 +22,6 @@ def geocode_here(direccion, api_key):
     return None
 
 def ruta_camion_here(origen_coord, destino_coord, paradas, api_key):
-    """Calcula ruta de camión con HERE Routing API."""
     waypoints = [f"{origen_coord[1]},{origen_coord[0]}" ]  # lat,lng
     for p in paradas:
         waypoints.append(f"{p[1]},{p[0]}")
@@ -36,9 +34,10 @@ def ruta_camion_here(origen_coord, destino_coord, paradas, api_key):
         "destination": waypoints[-1],
         "return": "polyline,summary",
         "apikey": api_key,
-        "truck[height]": "4.0m",
-        "truck[weight]": "40000",
-        "truck[axleCount]": "4"
+        # Valores numéricos, sin 'm'
+        "truck[height]": 4.0,
+        "truck[weight]": 40000,
+        "truck[axleCount]": 4
     }
 
     if len(waypoints) > 2:
