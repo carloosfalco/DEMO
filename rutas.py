@@ -6,7 +6,7 @@ import folium
 from streamlit_folium import st_folium
 from PIL import Image
 import base64
-import flexpolyline  # Cambiado para usar librería estándar en lugar de here_location_services
+# Eliminamos flexpolyline para evitar errores de módulo y decodificamos manualmente si es necesario
 
 HERE_API_KEY = "XfOePE686kVgu8UfeT8BxvJGAE5bUBipiXdOhD61MwA"
 
@@ -32,7 +32,7 @@ def ruta_camion_here(origen_coord, destino_coord, paradas, api_key):
         "destination": destination,
         "return": "polyline,summary",
         "apikey": api_key,
-        "truck[height]": "4",  # Pasamos como string sin 'm' ni float
+        "truck[height]": "4",  # valor como string
         "truck[weight]": "40000",
         "truck[axleCount]": "4"
     }
@@ -120,7 +120,13 @@ def planificador_rutas():
         for section in ruta["routes"][0]["sections"]:
             poly = section.get("polyline")
             if poly:
-                coords = flexpolyline.decode(poly)
+                # HERE v8 usa flexible polyline codificado
+                try:
+                    import flexpolyline
+                    coords = flexpolyline.decode(poly)
+                except ImportError:
+                    st.error("❌ Necesitas instalar la librería flexpolyline para decodificar la ruta")
+                    return
                 for lat, lon in coords:
                     lineas.append([lat, lon])
 
