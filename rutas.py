@@ -1,21 +1,63 @@
 import streamlit as st
-import openrouteservice
 import requests
 import math
 from datetime import datetime, timedelta
 import folium
 from streamlit_folium import st_folium
 from PIL import Image
+import polyline  # Para decodificar la polyline de HERE
+
+# ⚡ Inserta aquí tu API Key de HERE
+HERE_API_KEY = "XfOePE686kVgu8UfeT8BxvJGAE5bUBipiXdOhD61MwA"
+
+# ---------------------- FUNCIONES ----------------------
+
+def geocode_here(direccion, api_key):
+    """Convierte dirección en coordenadas usando HERE."""
+    url = "https://geocode.search.hereapi.com/v1/geocode"
+    params = {"q": direccion, "apiKey": api_key, "in": "countryCode:ESP"}
+    r = requests.get(url, params=params).json()
+    if r.get("items"):
+        loc = r["items"][0]["position"]
+        return [loc["lng"], loc["lat"]]
+    return None
+
+def ruta_camion_here(origen_coord, destino_coord, paradas, api_key):
+    """Calcula ruta de camión con HERE Routing API."""
+    waypoints = [f"{origen_coord[1]},{origen_coord[0]}"]  # lat,lng
+    for p in paradas:
+        waypoints.append(f"{p[1]},{p[0]}")  # lat,lng
+    waypoints.append(f"{destino_coord[1]},{destino_coord[0]}")
+
+    url = "https://router.hereapi.com/v8/routes"
+    params = {
+        "transportMode": "truck",
+        "origin": waypoints[0],
+        "destination": waypoints[-1],
+        "return": "polyline,summary",
+        "apikey": api_key,
+        "truck[height]": 4.0,
+        "truck[weight]": 40000,
+        "truck[axleCount]": 4
+    }
+
+    if len(waypoints) > 2:
+        params["via"] = "|".join(waypoints[1:-1])
+
+    r = requests.get(url, params=params).json()
+    return r
+
+def horas_y_minutos(valor_horas):
+    horas = int(valor_horas)
+    minutos = int(round((valor_horas - horas) * 60))
+    return f"{horas}h {minutos:02d}min"
+
+# ---------------------- INTERFAZ STREAMLIT ----------------------
 
 def planificador_rutas():
-    api_key = "5b3ce3597851110001cf6248ec3aedee3fa14ae4b1fd1b2440f2e589"
-    client = openrouteservice.Client(key=api_key)
-
     st.markdown("""
         <style>
-            body {
-                background-color: #f5f5f5;
-            }
+            body {background-color: #f5f5f5;}
             .stButton>button {
                 background-color: #8D1B2D;
                 color: white;
@@ -24,10 +66,7 @@ def planificador_rutas():
                 border: none;
                 font-weight: bold;
             }
-            .stButton>button:hover {
-                background-color: #a7283d;
-                color: white;
-            }
+            .stButton>button:hover {background-color: #a7283d; color: white;}
         </style>
     """, unsafe_allow_html=True)
 
@@ -49,13 +88,13 @@ def planificador_rutas():
     if st.button("🔍 Calcular Ruta"):
         st.session_state.resultados = None
 
-        coord_origen, _ = geocode(origen, api_key)
-        coord_destino, _ = geocode(destino, api_key)
+        coord_origen = geocode_here(origen, HERE_API_KEY)
+        coord_destino = geocode_here(destino, HERE_API_KEY)
 
         stops_list = []
         if stops.strip():
             for parada in stops.strip().split("\n"):
-                coord, _ = geocode(parada, api_key)
+                coord = geocode_here(parada, HERE_API_KEY)
                 if coord:
                     stops_list.append(coord)
                 else:
@@ -65,25 +104,18 @@ def planificador_rutas():
             st.error("❌ No se pudo geolocalizar el origen o destino.")
             return
 
-        coords_totales = [coord_origen] + stops_list + [coord_destino]
-
-        try:
-            ruta = client.directions(
-                coordinates=coords_totales,
-                profile='driving-hgv',
-                preference='recommended',
-                format='geojson'
-            )
-        except openrouteservice.exceptions.ApiError as e:
-            st.error(f"❌ Error al calcular la ruta: {e}")
+        ruta = ruta_camion_here(coord_origen, coord_destino, stops_list, HERE_API_KEY)
+        if "routes" not in ruta:
+            st.error("❌ Error al calcular la ruta con HERE.")
+            st.json(ruta)
             return
 
-        segmentos = ruta['features'][0]['properties']['segments']
-        distancia_total = sum(seg["distance"] for seg in segmentos)
-        duracion_total = sum(seg["duration"] for seg in segmentos)
+        # --- Procesar respuesta HERE ---
+        summary = ruta["routes"][0]["sections"][0]["summary"]
+        distancia_km = summary["length"] / 1000
+        duracion_horas = summary["duration"] / 3600
 
-        distancia_km = distancia_total / 1000
-        duracion_horas = duracion_total / 3600
+        # --- Cálculo de descansos ---
         descansos = math.floor(duracion_horas / 4.5)
         tiempo_total_h = duracion_horas + descansos * 0.75
         descanso_diario_h = 11 if tiempo_total_h > 13 else 0
@@ -91,75 +123,42 @@ def planificador_rutas():
         hora_salida = datetime.strptime(hora_salida_str, "%H:%M")
         hora_llegada = hora_salida + timedelta(hours=tiempo_total_real_h)
 
-        def horas_y_minutos(valor_horas):
-            horas = int(valor_horas)
-            minutos = int(round((valor_horas - horas) * 60))
-            return f"{horas}h {minutos:02d}min"
-
         tiempo_conduccion_txt = horas_y_minutos(duracion_horas)
         tiempo_total_txt = horas_y_minutos(tiempo_total_h)
 
-        st.session_state.resultados = {
-            "distancia_km": distancia_km,
-            "tiempo_conduccion_txt": tiempo_conduccion_txt,
-            "tiempo_total_txt": tiempo_total_txt,
-            "hora_llegada": hora_llegada.strftime("%H:%M"),
-            "hora_llegada_dt": hora_llegada,
-            "hora_salida_dt": hora_salida,
-            "tiempo_total_real_h": tiempo_total_real_h,
-            "linea": ruta["features"][0]["geometry"]["coordinates"],
-            "coord_origen": coord_origen,
-            "stops_list": stops_list,
-            "coord_destino": coord_destino
-        }
+        # --- Decodificar polyline ---
+        lineas = []
+        for section in ruta["routes"][0]["sections"]:
+            if "polyline" in section:
+                lineas += polyline.decode(section["polyline"])
 
-    if "resultados" in st.session_state and st.session_state.resultados:
-        r = st.session_state.resultados
-
+        # --- Mostrar métricas ---
         st.markdown("### 📊 Datos de la ruta")
         col1, col2, col3, col4, col5 = st.columns(5)
-        col1.metric("🚣 Distancia", f"{r['distancia_km']:.2f} km")
-        col2.metric("🕓 Conducción", r['tiempo_conduccion_txt'])
-        col3.metric("⏱ Total (con descansos)", r['tiempo_total_txt'])
-        col4.metric("📅 Llegada estimada", r['hora_llegada'])
+        col1.metric("🚛 Distancia", f"{distancia_km:.2f} km")
+        col2.metric("🕓 Conducción", tiempo_conduccion_txt)
+        col3.metric("⏱ Total (con descansos)", tiempo_total_txt)
+        col4.metric("📅 Llegada estimada", hora_llegada.strftime("%H:%M"))
 
-        if r['tiempo_total_real_h'] > 13:
+        if tiempo_total_real_h > 13:
             st.warning("⚠️ El viaje excede la jornada máxima (13h). Se ha añadido un descanso obligatorio de 11h.")
         else:
             st.success("🟢 El viaje puede completarse en una sola jornada de trabajo.")
-
-            llegada_tras_descanso = r["hora_llegada_dt"] + timedelta(hours=11)
-            cambia_dia = llegada_tras_descanso.date() > r["hora_llegada_dt"].date()
-            etiqueta = " (día siguiente)" if cambia_dia else ""
+            llegada_tras_descanso = hora_llegada + timedelta(hours=11)
+            etiqueta = " (día siguiente)" if llegada_tras_descanso.date() > hora_llegada.date() else ""
             col5.metric("🛌 Llegada + descanso", llegada_tras_descanso.strftime("%H:%M") + etiqueta)
 
-        linea_latlon = [[p[1], p[0]] for p in r['linea']]
+        # --- Mapa ---
+        linea_latlon = [[p[0], p[1]] for p in lineas]  # polyline ya devuelve lat,lng
         m = folium.Map(location=linea_latlon[0], zoom_start=6)
-        folium.Marker(location=[r['coord_origen'][1], r['coord_origen'][0]], tooltip="📍 Origen").add_to(m)
-        for idx, parada in enumerate(r['stops_list']):
+        folium.Marker(location=[coord_origen[1], coord_origen[0]], tooltip="📍 Origen").add_to(m)
+        for idx, parada in enumerate(stops_list):
             folium.Marker(location=[parada[1], parada[0]], tooltip=f"Parada {idx + 1}").add_to(m)
-        folium.Marker(location=[r['coord_destino'][1], r['coord_destino'][0]], tooltip="Destino").add_to(m)
+        folium.Marker(location=[coord_destino[1], coord_destino[0]], tooltip="Destino").add_to(m)
         folium.PolyLine(linea_latlon, color="blue", weight=5).add_to(m)
 
         st.markdown("### 🗘️ Ruta estimada en mapa:")
         st_folium(m, width=1200, height=500)
 
-        st.info("ℹ️ **Nota importante:** La ruta, duración y hora de llegada mostradas son aproximaciones basadas en datos de OpenRouteService. "
+        st.info("ℹ️ **Nota importante:** La ruta, duración y hora de llegada mostradas son aproximaciones basadas en datos de HERE. "
                 "Factores reales como tráfico, condiciones meteorológicas, obras o restricciones específicas para camiones pueden alterar significativamente estos valores.")
-
-def geocode(direccion, api_key):
-    url = "https://api.openrouteservice.org/geocode/search"
-    params = {
-        "api_key": api_key,
-        "text": direccion,
-        "boundary.country": "ES",
-        "size": 1
-    }
-    r = requests.get(url, params=params)
-    data = r.json()
-    if data.get("features"):
-        coord = data["features"][0]["geometry"]["coordinates"]
-        label = data["features"][0]["properties"]["label"]
-        return coord, label
-    else:
-        return None, None
