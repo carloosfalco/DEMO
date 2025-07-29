@@ -5,10 +5,10 @@ from datetime import datetime, timedelta
 import folium
 from streamlit_folium import st_folium
 from PIL import Image
-import polyline  # Para decodificar la polyline de HERE
+import polyline
 
 # ⚡ Inserta aquí tu API Key de HERE
-HERE_API_KEY = "XfOePE686kVgu8UfeT8BxvJGAE5bUBipiXdOhD61MwA"
+HERE_API_KEY = "TU_API_KEY_DE_HERE"
 
 # ---------------------- FUNCIONES ----------------------
 
@@ -24,9 +24,9 @@ def geocode_here(direccion, api_key):
 
 def ruta_camion_here(origen_coord, destino_coord, paradas, api_key):
     """Calcula ruta de camión con HERE Routing API."""
-    waypoints = [f"{origen_coord[1]},{origen_coord[0]}"]  # lat,lng
+    waypoints = [f"{origen_coord[1]},{origen_coord[0]}" ]  # lat,lng
     for p in paradas:
-        waypoints.append(f"{p[1]},{p[0]}")  # lat,lng
+        waypoints.append(f"{p[1]},{p[0]}")
     waypoints.append(f"{destino_coord[1]},{destino_coord[0]}")
 
     url = "https://router.hereapi.com/v8/routes"
@@ -36,9 +36,9 @@ def ruta_camion_here(origen_coord, destino_coord, paradas, api_key):
         "destination": waypoints[-1],
         "return": "polyline,summary",
         "apikey": api_key,
-        "truck[height]": 4.0,
-        "truck[weight]": 40000,
-        "truck[axleCount]": 4
+        "truck[height]": "4.0m",
+        "truck[weight]": "40000",
+        "truck[axleCount]": "4"
     }
 
     if len(waypoints) > 2:
@@ -110,12 +110,10 @@ def planificador_rutas():
             st.json(ruta)
             return
 
-        # --- Procesar respuesta HERE ---
         summary = ruta["routes"][0]["sections"][0]["summary"]
         distancia_km = summary["length"] / 1000
         duracion_horas = summary["duration"] / 3600
 
-        # --- Cálculo de descansos ---
         descansos = math.floor(duracion_horas / 4.5)
         tiempo_total_h = duracion_horas + descansos * 0.75
         descanso_diario_h = 11 if tiempo_total_h > 13 else 0
@@ -126,13 +124,11 @@ def planificador_rutas():
         tiempo_conduccion_txt = horas_y_minutos(duracion_horas)
         tiempo_total_txt = horas_y_minutos(tiempo_total_h)
 
-        # --- Decodificar polyline ---
         lineas = []
         for section in ruta["routes"][0]["sections"]:
             if "polyline" in section:
                 lineas += polyline.decode(section["polyline"])
 
-        # --- Mostrar métricas ---
         st.markdown("### 📊 Datos de la ruta")
         col1, col2, col3, col4, col5 = st.columns(5)
         col1.metric("🚛 Distancia", f"{distancia_km:.2f} km")
@@ -148,8 +144,7 @@ def planificador_rutas():
             etiqueta = " (día siguiente)" if llegada_tras_descanso.date() > hora_llegada.date() else ""
             col5.metric("🛌 Llegada + descanso", llegada_tras_descanso.strftime("%H:%M") + etiqueta)
 
-        # --- Mapa ---
-        linea_latlon = [[p[0], p[1]] for p in lineas]  # polyline ya devuelve lat,lng
+        linea_latlon = [[p[0], p[1]] for p in lineas]
         m = folium.Map(location=linea_latlon[0], zoom_start=6)
         folium.Marker(location=[coord_origen[1], coord_origen[0]], tooltip="📍 Origen").add_to(m)
         for idx, parada in enumerate(stops_list):
