@@ -6,8 +6,8 @@ import folium
 from streamlit_folium import st_folium
 from PIL import Image
 import polyline
+import base64
 
-# ⚡ Inserta aquí tu API Key de HERE
 HERE_API_KEY = "XfOePE686kVgu8UfeT8BxvJGAE5bUBipiXdOhD61MwA"
 
 # ---------------------- FUNCIONES ----------------------
@@ -22,26 +22,25 @@ def geocode_here(direccion, api_key):
     return None
 
 def ruta_camion_here(origen_coord, destino_coord, paradas, api_key):
-    waypoints = [f"{origen_coord[1]},{origen_coord[0]}" ]  # lat,lng
-    for p in paradas:
-        waypoints.append(f"{p[1]},{p[0]}")
-    waypoints.append(f"{destino_coord[1]},{destino_coord[0]}")
-
     url = "https://router.hereapi.com/v8/routes"
+
+    origin = f"{origen_coord[1]},{origen_coord[0]}"
+    destination = f"{destino_coord[1]},{destino_coord[0]}"
+    via = [f"{p[1]},{p[0]}" for p in paradas]
+
     params = {
         "transportMode": "truck",
-        "origin": waypoints[0],
-        "destination": waypoints[-1],
+        "origin": origin,
+        "destination": destination,
         "return": "polyline,summary",
         "apikey": api_key,
-        # HERE requiere cadenas, sin unidades ni decimales flotantes
         "truck[height]": "4",
         "truck[weight]": "40000",
         "truck[axleCount]": "4"
     }
 
-    if len(waypoints) > 2:
-        params["via"] = "|".join(waypoints[1:-1])
+    for i, v in enumerate(via):
+        params[f"via[{i}]"] = v
 
     r = requests.get(url, params=params).json()
     return r
@@ -85,8 +84,6 @@ def planificador_rutas():
     stops = st.text_area("➕ Paradas intermedias (una por línea)", placeholder="Ej: Albacete, España\nCuenca, España")
 
     if st.button("🔍 Calcular Ruta"):
-        st.session_state.resultados = None
-
         coord_origen = geocode_here(origen, HERE_API_KEY)
         coord_destino = geocode_here(destino, HERE_API_KEY)
 
@@ -125,8 +122,13 @@ def planificador_rutas():
 
         lineas = []
         for section in ruta["routes"][0]["sections"]:
-            if "polyline" in section:
-                lineas += polyline.decode(section["polyline"])
+            if "polyline" in section and section["polyline"]:
+                decoded = polyline.decode(section["polyline"])
+                lineas.extend(decoded)
+
+        if not lineas:
+            st.error("❌ No se pudo decodificar la polilínea de la ruta.")
+            return
 
         st.markdown("### 📊 Datos de la ruta")
         col1, col2, col3, col4, col5 = st.columns(5)
@@ -143,7 +145,7 @@ def planificador_rutas():
             etiqueta = " (día siguiente)" if llegada_tras_descanso.date() > hora_llegada.date() else ""
             col5.metric("🛌 Llegada + descanso", llegada_tras_descanso.strftime("%H:%M") + etiqueta)
 
-        linea_latlon = [[p[0], p[1]] for p in lineas]
+        linea_latlon = [[lat, lon] for lon, lat in lineas]
         m = folium.Map(location=linea_latlon[0], zoom_start=6)
         folium.Marker(location=[coord_origen[1], coord_origen[0]], tooltip="📍 Origen").add_to(m)
         for idx, parada in enumerate(stops_list):
@@ -154,5 +156,4 @@ def planificador_rutas():
         st.markdown("### 🗘️ Ruta estimada en mapa:")
         st_folium(m, width=1200, height=500)
 
-        st.info("ℹ️ **Nota importante:** La ruta, duración y hora de llegada mostradas son aproximaciones basadas en datos de HERE. "
-                "Factores reales como tráfico, condiciones meteorológicas, obras o restricciones específicas para camiones pueden alterar significativamente estos valores.")
+        st.info("ℹ️ **Nota importante:** La ruta, duración y hora de llegada mostradas son aproximaciones basadas en datos de HERE. Factores reales como tráfico, condiciones meteorológicas, obras o restricciones específicas para camiones pueden alterar significativamente estos valores.")
