@@ -6,7 +6,7 @@ import folium
 from streamlit_folium import st_folium
 from PIL import Image
 import base64
-from here_location_services import flexpolyline
+import flexpolyline  # Cambiado para usar librería estándar en lugar de here_location_services
 
 HERE_API_KEY = "XfOePE686kVgu8UfeT8BxvJGAE5bUBipiXdOhD61MwA"
 
@@ -32,9 +32,9 @@ def ruta_camion_here(origen_coord, destino_coord, paradas, api_key):
         "destination": destination,
         "return": "polyline,summary",
         "apikey": api_key,
-        "truck[height]": 4,
-        "truck[weight]": 40000,
-        "truck[axleCount]": 4
+        "truck[height]": "4",  # Pasamos como string sin 'm' ni float
+        "truck[weight]": "40000",
+        "truck[axleCount]": "4"
     }
 
     for i, v in enumerate(via):
