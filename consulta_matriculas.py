@@ -9,7 +9,45 @@ def consulta_matriculas():
     )
 
     avatar_user = "https://raw.githubusercontent.com/carloosfalco/DEMO/main/logo_peque_virosque.png"
-    avatar_bot = "https://raw.githubusercontent.com/carloosfalco/DEMO/main/robot_icon.png"  # puedes usar tu icono de bot
+    avatar_bot = "https://raw.githubusercontent.com/carloosfalco/DEMO/main/chip-de-ia.png"
+
+    # CSS para burbujas estilo WhatsApp
+    st.markdown("""
+        <style>
+        .chat-bubble {
+            max-width: 75%;
+            padding: 10px 15px;
+            margin: 5px;
+            border-radius: 15px;
+            line-height: 1.4;
+            display: inline-block;
+            word-wrap: break-word;
+        }
+        .user-bubble {
+            background-color: #DCF8C6; /* Verde tipo WhatsApp */
+            text-align: right;
+            float: right;
+            clear: both;
+        }
+        .bot-bubble {
+            background-color: #F1F0F0; /* Gris claro */
+            text-align: left;
+            float: left;
+            clear: both;
+        }
+        .chat-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: inline-block;
+            vertical-align: middle;
+            margin: 5px;
+        }
+        .chat-container {
+            overflow: hidden;
+        }
+        </style>
+    """, unsafe_allow_html=True)
 
     # Función para obtener respuestas desde Make
     def obtener_respuestas(input_usuario):
@@ -47,19 +85,29 @@ def consulta_matriculas():
     # Entrada de usuario
     user_input = st.chat_input("¿Qué quieres consultar?")
     if user_input:
-        # Guardamos mensaje del usuario
         st.session_state.chat_matriculas.append({"role": "user", "content": user_input})
 
-        # Consultamos webhook y añadimos respuesta(s)
         respuestas = obtener_respuestas(user_input)
         for r in respuestas:
             st.session_state.chat_matriculas.append({"role": "assistant", "content": r})
 
-    # Mostrar historial con estilo tipo WhatsApp
+    # Mostrar historial personalizado
     for msg in st.session_state.chat_matriculas:
         if msg["role"] == "user":
-            with st.chat_message("user", avatar=avatar_user):
-                st.markdown(msg["content"])
+            st.markdown(
+                f"""
+                <div class="chat-container">
+                    <div class="chat-bubble user-bubble">{msg['content']}</div>
+                    <img src="{avatar_user}" class="chat-avatar" style="float:right;">
+                </div>
+                """, unsafe_allow_html=True
+            )
         else:
-            with st.chat_message("assistant", avatar=avatar_bot):
-                st.markdown(msg["content"])
+            st.markdown(
+                f"""
+                <div class="chat-container">
+                    <img src="{avatar_bot}" class="chat-avatar" style="float:left;">
+                    <div class="chat-bubble bot-bubble">{msg['content']}</div>
+                </div>
+                """, unsafe_allow_html=True
+            )
