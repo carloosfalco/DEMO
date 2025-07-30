@@ -66,7 +66,7 @@ def planificador_rutas():
         </style>
     """, unsafe_allow_html=True)
 
-    st.title("TMS - Planificador de rutas para camiones")
+    st.title("Planificador de rutas para camiones")
 
     # Colocar origen, destino y hora de salida en una sola fila con mismo ancho
     col1, col2, col3 = st.columns(3)
