@@ -87,6 +87,8 @@ def planificador_rutas():
     with col3:
         hora_salida_str = st.time_input("🕒 Hora", value=datetime.strptime("08:00", "%H:%M")).strftime("%H:%M")
 
+    # Campo de paradas intermedias debajo
+    stops = st.text_area("➕ Paradas intermedias (una por línea)")
 
     if st.button("🔍 Calcular Ruta"):
         coord_origen = geocode_here(origen, HERE_API_KEY)
