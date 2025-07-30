@@ -68,8 +68,8 @@ def planificador_rutas():
 
     st.title("TMS - Planificador de rutas para camiones")
 
-    # Colocar origen, destino y hora de salida en una sola fila
-    col1, col2, col3 = st.columns([3,3,1])
+    # Colocar origen, destino y hora de salida en una sola fila con mismo ancho
+    col1, col2, col3 = st.columns(3)
     with col1:
         origen = st.text_input("📍 Origen", value="Valencia, España")
     with col2:
