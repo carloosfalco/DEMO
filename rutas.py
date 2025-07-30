@@ -2,12 +2,13 @@ import streamlit as st
 import requests
 import math
 from datetime import datetime, timedelta
+import folium
+from streamlit_folium import st_folium
 import flexpolyline
-import pydeck as pdk
 
 HERE_API_KEY = "XfOePE686kVgu8UfeT8BxvJGAE5bUBipiXdOhD61MwA"
 
-# Inicializar claves en session_state
+# Inicializar claves en session_state para evitar KeyError
 for key in ['route_result', 'origen', 'destino', 'hora_salida']:
     if key not in st.session_state:
         st.session_state[key] = None
@@ -67,6 +68,7 @@ def planificador_rutas():
 
     st.title("TMS - Planificador de rutas para camiones")
 
+    # Colocar origen, destino y hora de salida en una sola fila con mismo ancho
     col1, col2, col3 = st.columns(3)
     with col1:
         origen = st.text_input("📍 Origen", value="Valencia, España")
@@ -75,6 +77,7 @@ def planificador_rutas():
     with col3:
         hora_salida_str = st.time_input("🕒 Hora", value=datetime.strptime("08:00", "%H:%M")).strftime("%H:%M")
 
+    # Campo de paradas intermedias debajo
     stops = st.text_area("➕ Paradas intermedias (una por línea)")
 
     if st.button("🔍 Calcular Ruta"):
@@ -146,39 +149,14 @@ def planificador_rutas():
             etiqueta = " (día siguiente)" if llegada_tras_descanso.date() > hora_llegada.date() else ""
             col5.metric("🛌 Llegada + descanso", llegada_tras_descanso.strftime("%H:%M") + etiqueta)
 
-        latlngs = [[lat, lon] for lat, lon in lineas]
-        layers = [pdk.Layer(
-            "PathLayer",
-            data=[{"path": latlngs, "name": "Ruta"}],
-            get_path="path",
-            get_color=[0, 0, 255],
-            width_scale=10,
-            width_min_pixels=3
-        )]
-
-        # Añadir marcadores para origen, destino y paradas
-        markers_data = [{"lat": coord_origen[1], "lon": coord_origen[0], "color": [0,255,0]},
-                        {"lat": coord_destino[1], "lon": coord_destino[0], "color": [255,0,0]}]
-        for stop in stops_list:
-            markers_data.append({"lat": stop[1], "lon": stop[0], "color": [255,165,0]})
-
-        marker_layer = pdk.Layer(
-            "ScatterplotLayer",
-            data=markers_data,
-            get_position='[lon, lat]',
-            get_fill_color='color',
-            get_radius=5000
-        )
-        layers.append(marker_layer)
-
-        view_state = pdk.ViewState(
-            latitude=lineas[0][0],
-            longitude=lineas[0][1],
-            zoom=6,
-            pitch=0
-        )
+        m = folium.Map(location=lineas[0], zoom_start=6)
+        folium.Marker(location=[coord_origen[1], coord_origen[0]], tooltip="📍 Origen").add_to(m)
+        for idx, parada in enumerate(stops_list):
+            folium.Marker(location=[parada[1], parada[0]], tooltip=f"Parada {idx + 1}").add_to(m)
+        folium.Marker(location=[coord_destino[1], coord_destino[0]], tooltip="Destino").add_to(m)
+        folium.PolyLine(lineas, color="blue", weight=5).add_to(m)
 
         st.markdown("### 🗘️ Ruta estimada en mapa:")
-        st.pydeck_chart(pdk.Deck(map_style="road", layers=layers, initial_view_state=view_state))
+        st_folium(m, width=1200, height=500)
 
         st.info("ℹ️ **Nota importante:** La ruta, duración y hora de llegada mostradas son aproximaciones basadas en datos de HERE. Factores reales como tráfico, condiciones meteorológicas, obras o restricciones específicas para camiones pueden alterar significativamente estos valores.")
