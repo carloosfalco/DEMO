@@ -32,9 +32,10 @@ def ruta_camion_here(origen_coord, destino_coord, paradas, api_key):
         "destination": destination,
         "return": "polyline,summary",
         "apikey": api_key,
-        "truck[height]": "4.0",
-        "truck[weight]": "40000",
-        "truck[axleCount]": "4"
+        # HERE espera valores numéricos sin comillas ni sufijos
+        "truck[height]": 4.0,
+        "truck[weight]": 40000,
+        "truck[axleCount]": 4
     }
 
     for i, v in enumerate(via):
