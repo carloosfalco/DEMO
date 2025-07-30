@@ -3,7 +3,13 @@ import requests
 
 def consulta_matriculas():
     st.title("🔎 Consulta de matrículas")
-    st.markdown("Escribe una consulta en lenguaje natural para saber quién lleva una tractora, remolque o qué tiene un chófer asignado.")
+    st.markdown(
+        "Escribe una consulta en lenguaje natural para saber quién lleva una tractora, "
+        "remolque o qué tiene un chófer asignado."
+    )
+
+    avatar_user = "https://raw.githubusercontent.com/carloosfalco/DEMO/main/logo_peque_virosque.png"
+    avatar_bot = "https://raw.githubusercontent.com/carloosfalco/DEMO/main/robot_icon.png"  # puedes usar tu icono de bot
 
     # Función para obtener respuestas desde Make
     def obtener_respuestas(input_usuario):
@@ -49,11 +55,11 @@ def consulta_matriculas():
         for r in respuestas:
             st.session_state.chat_matriculas.append({"role": "assistant", "content": r})
 
-    # Mostrar historial sin avatar
+    # Mostrar historial con estilo tipo WhatsApp
     for msg in st.session_state.chat_matriculas:
         if msg["role"] == "user":
-            with st.chat_message("user"):
+            with st.chat_message("user", avatar=avatar_user):
                 st.markdown(msg["content"])
         else:
-            with st.chat_message("assistant"):
+            with st.chat_message("assistant", avatar=avatar_bot):
                 st.markdown(msg["content"])
