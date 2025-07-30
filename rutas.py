@@ -8,9 +8,11 @@ import flexpolyline
 
 HERE_API_KEY = "XfOePE686kVgu8UfeT8BxvJGAE5bUBipiXdOhD61MwA"
 
+# Inicializar clave en session_state para evitar KeyError
 if 'route_result' not in st.session_state:
     st.session_state['route_result'] = None
 
+# Funciones auxiliares
 def geocode_here(direccion, api_key):
     url = "https://geocode.search.hereapi.com/v1/geocode"
     params = {"q": direccion, "apiKey": api_key, "in": "countryCode:ESP"}
@@ -26,14 +28,14 @@ def ruta_camion_here(origen_coord, destino_coord, paradas, api_key):
     destination = f"{destino_coord[1]},{destino_coord[0]}"
     via = [f"{p[1]},{p[0]}" for p in paradas]
 
+    # Parametros correctos, valores numericos y sin sufijos
     params = {
         "transportMode": "truck",
         "origin": origin,
         "destination": destination,
         "return": "polyline,summary",
         "apikey": api_key,
-        # HERE espera valores numéricos sin comillas ni sufijos
-        "truck[height]": 4.0,
+        "truck[height]": 4,  # usar entero
         "truck[weight]": 40000,
         "truck[axleCount]": 4
     }
@@ -91,10 +93,11 @@ def planificador_rutas():
         ruta = ruta_camion_here(coord_origen, coord_destino, stops_list, HERE_API_KEY)
         st.session_state['route_result'] = (ruta, coord_origen, coord_destino, stops_list, hora_salida_str)
 
-    if st.session_state['route_result']:
+    # Mostrar resultados si existen
+    if st.session_state['route_result'] is not None:
         ruta, coord_origen, coord_destino, stops_list, hora_salida_str = st.session_state['route_result']
 
-        if "routes" not in ruta:
+        if not ruta or "routes" not in ruta:
             st.error("❌ Error al calcular la ruta con HERE.")
             st.json(ruta)
             return
