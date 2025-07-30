@@ -1,14 +1,11 @@
 import streamlit as st
-from streamlit_chat import message
 import requests
-import uuid
 
 def consulta_matriculas():
     st.title("🔎 Consulta de matrículas")
     st.markdown("Escribe una consulta en lenguaje natural para saber quién lleva una tractora, remolque o qué tiene un chófer asignado.")
 
-    logo_virosque = "https://raw.githubusercontent.com/carloosfalco/DEMO/main/logo_peque_virosque.png"
-
+    # Función para obtener respuestas desde Make
     def obtener_respuestas(input_usuario):
         url_webhook = "https://hook.eu2.make.com/qaddp62g48t3d3dveklxvrso898d6774"
 
@@ -37,31 +34,26 @@ def consulta_matriculas():
         except Exception as e:
             return [f"⚠️ Error de conexión: {str(e)}"]
 
-    # Historial
+    # Historial de chat
     if "chat_matriculas" not in st.session_state:
         st.session_state.chat_matriculas = []
 
-    # Entrada
+    # Entrada de usuario
     user_input = st.chat_input("¿Qué quieres consultar?")
     if user_input:
+        # Guardamos mensaje del usuario
         st.session_state.chat_matriculas.append({"role": "user", "content": user_input})
+
+        # Consultamos webhook y añadimos respuesta(s)
         respuestas = obtener_respuestas(user_input)
         for r in respuestas:
             st.session_state.chat_matriculas.append({"role": "assistant", "content": r})
 
-    # Mostrar mensajes
-    for i, msg in enumerate(st.session_state.chat_matriculas):
+    # Mostrar historial sin avatar
+    for msg in st.session_state.chat_matriculas:
         if msg["role"] == "user":
-            message(
-                msg["content"],
-                is_user=True,
-                avatar_style="",
-                logo=logo_virosque,
-                key=f"user_{i}"
-            )
+            with st.chat_message("user"):
+                st.markdown(msg["content"])
         else:
-            message(
-                msg["content"],
-                is_user=False,
-                key=f"bot_{i}"
-            )
+            with st.chat_message("assistant"):
+                st.markdown(msg["content"])
