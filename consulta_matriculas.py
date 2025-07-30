@@ -11,40 +11,42 @@ def consulta_matriculas():
     avatar_user = "https://raw.githubusercontent.com/carloosfalco/DEMO/main/logo_peque_virosque.png"
     avatar_bot = "https://raw.githubusercontent.com/carloosfalco/DEMO/main/chip-de-ia.png"
 
-    # CSS para burbujas estilo WhatsApp
+    # CSS estilo WhatsApp
     st.markdown("""
         <style>
+        .chat-container {
+            width: 100%;
+            overflow: hidden;
+            margin: 10px 0;
+            display: flex;
+        }
         .chat-bubble {
-            max-width: 75%;
+            max-width: 65%;
             padding: 10px 15px;
-            margin: 5px;
             border-radius: 15px;
             line-height: 1.4;
-            display: inline-block;
             word-wrap: break-word;
         }
         .user-bubble {
-            background-color: #DCF8C6; /* Verde tipo WhatsApp */
-            text-align: right;
-            float: right;
-            clear: both;
+            background-color: #DCF8C6;
+            margin-left: auto;
+            border-bottom-right-radius: 2px;
         }
         .bot-bubble {
-            background-color: #F1F0F0; /* Gris claro */
-            text-align: left;
-            float: left;
-            clear: both;
+            background-color: #F1F0F0;
+            margin-right: auto;
+            border-bottom-left-radius: 2px;
         }
         .chat-avatar {
-            width: 32px;
-            height: 32px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
-            display: inline-block;
-            vertical-align: middle;
-            margin: 5px;
         }
-        .chat-container {
-            overflow: hidden;
+        .user-msg {
+            justify-content: flex-end;
+        }
+        .bot-msg {
+            justify-content: flex-start;
         }
         </style>
     """, unsafe_allow_html=True)
@@ -91,22 +93,24 @@ def consulta_matriculas():
         for r in respuestas:
             st.session_state.chat_matriculas.append({"role": "assistant", "content": r})
 
-    # Mostrar historial personalizado
+    # Mostrar historial con avatares en el lado correcto
     for msg in st.session_state.chat_matriculas:
         if msg["role"] == "user":
+            # Burbuja + avatar a la derecha
             st.markdown(
                 f"""
-                <div class="chat-container">
+                <div class="chat-container user-msg">
                     <div class="chat-bubble user-bubble">{msg['content']}</div>
-                    <img src="{avatar_user}" class="chat-avatar" style="float:right;">
+                    <img src="{avatar_user}" class="chat-avatar" style="margin-left:5px;">
                 </div>
                 """, unsafe_allow_html=True
             )
         else:
+            # Avatar + burbuja a la izquierda
             st.markdown(
                 f"""
-                <div class="chat-container">
-                    <img src="{avatar_bot}" class="chat-avatar" style="float:left;">
+                <div class="chat-container bot-msg">
+                    <img src="{avatar_bot}" class="chat-avatar" style="margin-right:5px;">
                     <div class="chat-bubble bot-bubble">{msg['content']}</div>
                 </div>
                 """, unsafe_allow_html=True
