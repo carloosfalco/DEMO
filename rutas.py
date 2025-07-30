@@ -67,9 +67,17 @@ def planificador_rutas():
     """, unsafe_allow_html=True)
 
     st.title("TMS - Planificador de rutas para camiones")
-    origen = st.text_input("📍 Origen", value="Valencia, España")
-    destino = st.text_input("🏁 Destino", value="Madrid, España")
-    hora_salida_str = st.time_input("🕒 Hora de salida", value=datetime.strptime("08:00", "%H:%M")).strftime("%H:%M")
+
+    # Colocar origen, destino y hora de salida en una sola fila
+    col1, col2, col3 = st.columns([3,3,1])
+    with col1:
+        origen = st.text_input("📍 Origen", value="Valencia, España")
+    with col2:
+        destino = st.text_input("🏁 Destino", value="Madrid, España")
+    with col3:
+        hora_salida_str = st.time_input("🕒 Hora", value=datetime.strptime("08:00", "%H:%M")).strftime("%H:%M")
+
+    # Campo de paradas intermedias debajo
     stops = st.text_area("➕ Paradas intermedias (una por línea)")
 
     if st.button("🔍 Calcular Ruta"):
