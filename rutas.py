@@ -22,11 +22,10 @@ def geocode_here(direccion, api_key):
         return [loc["lng"], loc["lat"]]
     return None
 
-def ruta_camion_here(origen_coord, destino_coord, paradas, api_key):
+def ruta_camion_here(origen_coord, destino_coord, api_key):
     url = "https://router.hereapi.com/v8/routes"
     origin = f"{origen_coord[1]},{origen_coord[0]}"
     destination = f"{destino_coord[1]},{destino_coord[0]}"
-    via = [f"{p[1]},{p[0]}" for p in paradas]
 
     params = {
         "transportMode": "truck",
@@ -38,9 +37,6 @@ def ruta_camion_here(origen_coord, destino_coord, paradas, api_key):
         "truck[weight]": "40000",
         "truck[axleCount]": "4"
     }
-
-    for i, v in enumerate(via):
-        params[f"via[{i}]"] = v
 
     r = requests.get(url, params=params).json()
     return r
@@ -87,31 +83,19 @@ def planificador_rutas():
     with col3:
         hora_salida_str = st.time_input("🕒 Hora", value=datetime.strptime("08:00", "%H:%M")).strftime("%H:%M")
 
-    # Campo de paradas intermedias debajo
-    stops = st.text_area("➕ Paradas intermedias (una por línea)")
-
     if st.button("🔍 Calcular Ruta"):
         coord_origen = geocode_here(origen, HERE_API_KEY)
         coord_destino = geocode_here(destino, HERE_API_KEY)
-
-        stops_list = []
-        if stops.strip():
-            for parada in stops.strip().split("\n"):
-                coord = geocode_here(parada, HERE_API_KEY)
-                if coord:
-                    stops_list.append(coord)
-                else:
-                    st.warning(f"❌ No se pudo geolocalizar: {parada}")
 
         if not coord_origen or not coord_destino:
             st.error("❌ No se pudo geolocalizar el origen o destino.")
             return
 
-        ruta = ruta_camion_here(coord_origen, coord_destino, stops_list, HERE_API_KEY)
-        st.session_state['route_result'] = (ruta, coord_origen, coord_destino, stops_list, hora_salida_str)
+        ruta = ruta_camion_here(coord_origen, coord_destino, HERE_API_KEY)
+        st.session_state['route_result'] = (ruta, coord_origen, coord_destino, hora_salida_str)
 
     if st.session_state.get('route_result'):
-        ruta, coord_origen, coord_destino, stops_list, hora_salida_str = st.session_state['route_result']
+        ruta, coord_origen, coord_destino, hora_salida_str = st.session_state['route_result']
 
         if not ruta or "routes" not in ruta:
             st.error("❌ Error al calcular la ruta con HERE.")
@@ -161,8 +145,6 @@ def planificador_rutas():
 
         m = folium.Map(location=lineas[0], zoom_start=6)
         folium.Marker(location=[coord_origen[1], coord_origen[0]], tooltip="📍 Origen").add_to(m)
-        for idx, parada in enumerate(stops_list):
-            folium.Marker(location=[parada[1], parada[0]], tooltip=f"Parada {idx + 1}").add_to(m)
         folium.Marker(location=[coord_destino[1], coord_destino[0]], tooltip="Destino").add_to(m)
         folium.PolyLine(lineas, color="blue", weight=5).add_to(m)
 
