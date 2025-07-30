@@ -4,7 +4,7 @@ import math
 from datetime import datetime, timedelta
 import folium
 from streamlit_folium import st_folium
-from PIL import Image
+import flexpolyline
 
 HERE_API_KEY = "XfOePE686kVgu8UfeT8BxvJGAE5bUBipiXdOhD61MwA"
 
@@ -32,7 +32,7 @@ def ruta_camion_here(origen_coord, destino_coord, paradas, api_key):
         "destination": destination,
         "return": "polyline,summary",
         "apikey": api_key,
-        "truck[height]": "4",
+        "truck[height]": "4.0",
         "truck[weight]": "40000",
         "truck[axleCount]": "4"
     }
@@ -49,6 +49,21 @@ def horas_y_minutos(valor_horas):
     return f"{horas}h {minutos:02d}min"
 
 def planificador_rutas():
+    st.markdown("""
+        <style>
+            body {background-color: #f5f5f5;}
+            .stButton>button {
+                background-color: #8D1B2D;
+                color: white;
+                border-radius: 6px;
+                padding: 0.6em 1em;
+                border: none;
+                font-weight: bold;
+            }
+            .stButton>button:hover {background-color: #a7283d; color: white;}
+        </style>
+    """, unsafe_allow_html=True)
+
     st.title("TMS - Planificador de rutas para camiones")
     origen = st.text_input("📍 Origen", value="Valencia, España")
     destino = st.text_input("🏁 Destino", value="Madrid, España")
@@ -101,7 +116,6 @@ def planificador_rutas():
         for section in ruta["routes"][0]["sections"]:
             poly = section.get("polyline")
             if poly:
-                import flexpolyline
                 coords = flexpolyline.decode(poly)
                 for lat, lon in coords:
                     lineas.append([lat, lon])
