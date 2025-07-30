@@ -66,6 +66,16 @@ def planificador_rutas():
         </style>
     """, unsafe_allow_html=True)
 
+    # Logo Virosque centrado en la parte superior
+    st.markdown(
+        """
+        <div style="text-align:center; margin-bottom:20px;">
+            <img src="https://raw.githubusercontent.com/carloosfalco/DEMO/main/logo-virosque2-01.png" width="250">
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
     st.title("Planificador de rutas para camiones")
 
     # Colocar origen, destino y hora de salida en una sola fila con mismo ancho
