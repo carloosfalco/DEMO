@@ -10,7 +10,7 @@ def consulta_matriculas():
     logo_virosque = "https://raw.githubusercontent.com/carloosfalco/DEMO/main/logo_peque_virosque.png"
 
     def obtener_respuestas(input_usuario):
-        url_webhook = "https://hook.eu2.make.com/vkzk2hkl67dn1d5gyszmbjn8duoyi9c3"
+        url_webhook = "https://hook.eu2.make.com/qaddp62g48t3d3dveklxvrso898d6774"
 
         try:
             respuesta = requests.post(
