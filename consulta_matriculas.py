@@ -59,7 +59,7 @@ def consulta_matriculas():
             respuesta = requests.post(
                 url_webhook,
                 json={"consulta": input_usuario},
-                timeout=300
+                timeout=(30,300)
             )
 
             if respuesta.status_code == 200:
